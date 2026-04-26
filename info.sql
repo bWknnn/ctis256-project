@@ -27,25 +27,28 @@ SET time_zone = "+00:00";
 -- Table structure for table `auth`
 --
 
-DROP TABLE IF EXISTS `auth`;
-CREATE TABLE IF NOT EXISTS `auth` (
+DROP TABLE IF EXISTS `userInfo`;
+CREATE TABLE IF NOT EXISTS `userInfo` (
+  `email` varchar(100) NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
+  `city` varchar(200) DEFAULT NULL,
+  `district` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `marketInfo`;
+CREATE TABLE IF NOT EXISTS `marketInfo` (
   `email` varchar(100) NOT NULL,
   `password` varchar(100) NOT NULL,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
-  `remember` varchar(200) DEFAULT NULL,
-  `profile` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `market` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
+  `city` varchar(200) DEFAULT NULL,
+  `district` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`email`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `auth`
 --
-
-INSERT INTO `auth` (`email`, `password`, `name`, `remember`, `profile`) VALUES
-('ali@gmail.com', '$2a$10$e5fur6yolFMdD2fICktZBeMGVtwNjtajsoSnGYRiqDfvLj3aJbsG2', 'Ali Gül', NULL, NULL),
-('john@gmail.com', '$2y$10$AfLS6.6s0rQbFMaih2keeeDViYCSqkVBHnJy0RZ1uzkZVEb85YYyO', 'John Lock', NULL, NULL),
-('kate@gmail.com', '$2y$10$uuAlZ0L/tZg3R4.FH6/hEOeeKFkH194t536MKUe2pW9EwRXTpkc.a', 'Kate Austen', NULL, NULL);
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

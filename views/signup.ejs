@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/login.css">
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <% if(type == "consumer"){%>
+            <form action="/signup" method="post">
+                <p>CONSUMER SIGN UP</p>
+
+                <label>
+                    Email:
+                    <input type="text" name="email" id="">
+                </label>
+                <label>
+                    Full Name:
+                    <input type="text" name="fullname" id="">
+                </label>
+                <label>
+                    City:
+                    <input type="text" name="city" id="">
+                </label>
+                <label>
+                    District:
+                    <input type="text" name="district" id="">
+                </label>
+
+
+                <button type="submit">Sign Up</button>
+            </form>
+        <%}else{%>
+           <form action="/signup" method="post">
+                <p>MARKET USER SIGN UP</p>
+
+                <label>
+                    Email:
+                    <input type="text" name="email" id="">
+                </label>
+                 <label>
+                    Password:
+                    <input type="password" name="password" id="" autocomplete="off" >
+                </label>
+                <label>
+                    Market Name:
+                    <input type="text" name="market" id="">
+                </label>
+               
+                <label>
+                    City:
+                    <input type="text" name="city" id="">
+                </label>
+                <label>
+                    District:
+                    <input type="text" name="district" id="">
+                </label>
+
+
+                <button type="submit">Sign Up</button>
+            </form>
+        <%}%>
+        <% if(msg) {%>
+            <p><%=msg%></p>
+        <% } %>
+    </div>
+</body>
+</html>
