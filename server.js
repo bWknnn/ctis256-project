@@ -3,10 +3,24 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import db from "./db.js";
+import multer from "multer";
+import path from "path"
+
 const app = express();
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"))
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "public/products"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) ?? "";
+    const name = path.basename(file.originalname, ext);
+    cb(null, `${Date.now()}-${name}${ext}`);
+  }
+});
+const upload = multer({ storage });
+
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -29,7 +43,11 @@ app.get("/", async(req, res) => {
     const type = req.session.loginType
     const msg = req.session.msg
     req.session.msg = null
-    res.render("login", {type,msg});
+    if(!req.session.user){
+      res.render("login", {type,msg});
+    }else{
+      res.redirect("/mainpage")
+    }
 });
 
 app.post("/login", async (req,res)=>{
@@ -108,7 +126,58 @@ app.get("/mainpage", async (req,res)=>{
         req.session.msg = "Please login to access the mainpage";
         return res.redirect("/");
     }
-  res.render("mainpage", { user: req.session.user });
+  if(req.session.loginType== "market") {
+    res.render("mainpage", { user: req.session.user });
+  } else {
+    res.redirect("/")
+  }
+  
+})
+
+app.get("/addOne", async(req,res) => {
+  try{
+    await db.query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      img VARCHAR(255),
+      title VARCHAR(255) NOT NULL,
+      stock INT NOT NULL,
+      normal_price DECIMAL(10, 2) NOT NULL,
+      discount_price DECIMAL(10, 2) NOT NULL,
+      created_at DATETIME NOT NULL,
+      district VARCHAR(255)
+    )
+  `);
+    res.render("addpro", {user:req.session.user})
+  }catch(error){
+     console.log("error")
+  }
+})
+
+app.post("/addOne", upload.single("photo"), async (req, res) => {
+  try{
+
+    if (!req.file) {
+      return res.status(400).send("No image!");
+    }
+    const ext = path.extname(req.file.originalname).toLowerCase()
+    const form= req.body
+    if (![".jpg", ".jpeg", ".png"].includes(ext)) {
+      return res.redirect("/")
+    }
+    await db.query("INSERT INTO products (img, title, stock, normal_price, discount_price, created_at, district) VALUES (?, ?, ?,?,?,?,?)", 
+      [ req.file.filename, form.title,form.stock,form.normal,form.discount,form.date, req.session.user.district ])
+    res.redirect("/addOne")
+  }catch(error){
+     console.log("error")
+     return res.status(400).send(error);
+  }
+}) 
+
+app.get("/logout", (req,res)=>{
+  delete req.session.user
+  delete req.session.isAuthenticated
+  res.redirect("/")
 })
 
 app.listen(process.env.PORT, () => {
