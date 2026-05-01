@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/edit.css">
+</head>
+<body>
+    
+    <form action="/edit" method="post" class="edit info">
+        <h1>Profile Information</h1>
+       <label for="">
+           Email: <input type="text" name="email" placeholder="<%=user.email %>">
+       </label>
+        
+       <label for="">
+            Market Name: <input type="text" name="market" placeholder="<%=user.market %>">
+       </label>
+        
+       <label for="">
+           City: <input type="text" name="city" placeholder="<%=user.city %>">
+       </label>
+
+       <label for="">
+           District: <input type="text" name="district" placeholder="<%=user.district %>">   
+       </label>
+        
+        <button type="submit">Edit</button>
+    </form>
+
+    <button>Change Password</button>
+    
+    <form action="/edit" method="post" class="edit pass">
+       
+        <label for="">
+            Enter Current Password: <input type="text" name="current1">
+        </label>
+        
+        <label for="">
+            Enter Current Password Again: <input type="text" name="current2">
+        </label>
+        
+        <label for="">
+            Enter New Password : <input type="text" name="newpass">
+        </label>
+        
+
+        <button type="submit">Edit</button>
+    </form>
+
+</body>
+</html>

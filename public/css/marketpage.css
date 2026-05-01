@@ -2,7 +2,7 @@
 .options{ position: fixed;top: 20px;left: 20px;width: 35px;height: 35px; transition: transform 0.3s ease;}
 .options:hover{cursor: pointer; transform: scale(1.2);}
 .top {
-    background-color: rgb(167, 245, 167);
+    background-color: rgb(131, 233, 156);
     align-items: center;
     text-align: center;
     height: 75px;
@@ -19,7 +19,7 @@
     width: 250px;
     align-items: center;
     justify-content: space-between;
-    background-color: rgb(134, 184, 245);
+    background-color: rgb(197, 250, 210);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
 }
@@ -35,7 +35,7 @@ p > a{ display: flex; align-items: center;gap: 15px;text-decoration: none;color:
     display: flex; flex-direction: column; gap: 20px;
     justify-content: center; align-items: center;
     padding: 30px;
-    background-color: rgb(250, 159, 159);
+    background-color: white;
     min-height: calc(100vh - 75px);
     transition: margin-left 0.3s ease;
     position: relative;
@@ -49,4 +49,10 @@ h2{position: absolute;top: 110px;left: 50%;transform: translateX(-50%);font-size
 .product{
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     border: 1px solid black; padding: 12px; margin: 12px;
+}
+
+.proctrl{
+    display: flex;
+    width: 200px;
+    justify-content: space-between;
 }
