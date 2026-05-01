@@ -6,6 +6,8 @@ import db from "./db.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import {body, validationResult} from "express-validator"
+
 
 const app = express();
 app.set("view engine", "ejs");
@@ -127,9 +129,16 @@ app.get("/marketpage", async (req,res)=>{
         req.session.msg = "Please login to access the mainpage";
         return res.redirect("/");
     }
+
+  let page=req.query.page ?? 1
+  page= parseInt(page)
   let [pros] = await db.query("SELECT * from products where email = ?",[req.session.user.email])
+  let [shown] = await db.query ("select * from products where email = ? limit ?,3", [req.session.user.email, (page-1)*3])
+
+  const pagenum= Math.ceil(pros.length/3)
+
   if(req.session.loginType== "market") {
-    res.render("marketpage", { user: req.session.user , pros});
+    res.render("marketpage", { user: req.session.user , pagenum, shown,page});
   } else {
     res.redirect("/")
   }
@@ -191,6 +200,18 @@ app.get("/logout", (req,res)=>{
   delete req.session.isAuthenticated
   res.redirect("/")
 })
+
+app.get("/edit", async(req,res)=> {
+  res.render("edit", {user:req.session.user})
+  
+})
+
+app.get("/delete/:id", async(req,res)=> {
+  await db.query("DELETE from products where id=?", [req.params.id])
+
+  res.redirect("/marketpage" )
+})
+
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
