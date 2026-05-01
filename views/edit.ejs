@@ -7,47 +7,64 @@
     <link rel="stylesheet" href="/css/edit.css">
 </head>
 <body>
-    
-    <form action="/edit" method="post" class="edit info">
+    <div class="edit <%= activeTab == 'password' ? 'visible' : '' %>">
         <h1>Profile Information</h1>
-       <label for="">
-           Email: <input type="text" name="email" placeholder="<%=user.email %>">
-       </label>
-        
-       <label for="">
-            Market Name: <input type="text" name="market" placeholder="<%=user.market %>">
-       </label>
-        
-       <label for="">
-           City: <input type="text" name="city" placeholder="<%=user.city %>">
-       </label>
-
-       <label for="">
-           District: <input type="text" name="district" placeholder="<%=user.district %>">   
-       </label>
-        
-        <button type="submit">Edit</button>
-    </form>
-
-    <button>Change Password</button>
+        <form action="/edit" method="post">
+           <label>
+               <p>Email: </p><input type="text" name="email" value="<%=user.email %>">
+           </label>
+            
+           <label>
+            <p>Market Name: </p><input type="text" name="market" value="<%=user.market %>">
+           </label>
+            
+           <label>
+               <p>City: </p><input type="text" name="city" value="<%=user.city %>">
+           </label>
     
-    <form action="/edit" method="post" class="edit pass">
-       
-        <label for="">
-            Enter Current Password: <input type="text" name="current1">
-        </label>
-        
-        <label for="">
-            Enter Current Password Again: <input type="text" name="current2">
-        </label>
-        
-        <label for="">
-            Enter New Password : <input type="text" name="newpass">
-        </label>
-        
+           <label>
+               <p>District: </p><input type="text" name="district" value="<%=user.district %>">   
+           </label>
+           <%if(success!=null){%>
+                <p><%=success%></p>
+            <%}%>
+            <button type="submit">Edit</button>
+        </form>
+        <button class="change">Change Password</button>
+    </div>
 
-        <button type="submit">Edit</button>
-    </form>
+    <div class="edit <%= activeTab == 'info' ? 'visible' : '' %>">
+        <h1>Change Password</h1>
+        <form action="/edit-password" method="post">
+            <label>
+                Enter Current Password: <input type="password" name="current">
+            </label>
+            
+            <label>
+                Enter New Password: <input type="password" name="new1">
+            </label>
+            
+            <label>
+                Enter New Password Again: <input type="password" name="new2">
+            </label>
+            
+            <% if (errors && errors.length > 0) { %>
+                <% errors.forEach(e => { %>
+                    <p class="error"><%= e %></p>
+                <% }) %>
+            <% } %>
 
+            <% if (success) { %>
+                <p class="success"><%= success %></p>
+            <% } %>
+
+            <button type="submit">Edit</button>
+        </form>
+        <button class="change">Change Info</button>
+    </div>    
+    <a style=" display: block;margin: 0px auto; width: fit-content;" href="/marketpage">Back to Market Page</a>
+
+
+    <script src="/script/edit.js"></script>
 </body>
 </html>

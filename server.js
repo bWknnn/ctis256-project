@@ -195,15 +195,89 @@ app.post("/addOne", upload.single("photo"), async (req, res) => {
   }
 }) 
 
-app.get("/logout", (req,res)=>{
+app.get("/logout", async (req,res)=>{
   delete req.session.user
   delete req.session.isAuthenticated
   res.redirect("/")
 })
 
 app.get("/edit", async(req,res)=> {
-  res.render("edit", {user:req.session.user})
-  
+  if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login first";
+      return res.redirect("/");
+  }
+  const success = req.session.success
+  const errors = req.session.error || []
+  req.session.activeTab ??= "info"
+
+  req.session.success = null;
+  req.session.error = [];
+
+  res.render("edit", {user:req.session.user, success, errors, activeTab:req.session.activeTab})
+})
+
+app.post("/edit", async(req,res)=>{
+  if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login first";
+      return res.redirect("/");
+  }
+  const form = req.body
+  const user = req.session.user
+  req.session.activeTab = "info";
+  if(form.email != user.email || form.market != user.market || form.city != user.city || form.district != user.district){
+    req.session.success = "Information has been changed successfully!"
+    await db.query("UPDATE market SET email = ?, market = ?, city = ?, district = ? WHERE email = ?",[form.email,form.market,form.city,form.district,user.email]);
+    req.session.user.email = form.email;
+    req.session.user.market = form.market;
+    req.session.user.city = form.city;
+    req.session.user.district = form.district;
+  }
+  res.redirect("/edit")
+})
+
+app.post("/edit-password",
+  body("current").trim().notEmpty().withMessage("Current password is required."),
+  body("new1").trim().notEmpty().withMessage("New password should not be empty."),
+  body("new2").trim().notEmpty().withMessage("Write the new password again."),
+  async (req,res)=>{
+    if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login first";
+      return res.redirect("/");
+    }
+    const errors = validationResult(req);
+    req.session.error = errors.array().map(e => e.msg)
+    req.session.activeTab = "password";
+
+    if(errors.isEmpty()){
+      const {current, new1, new2} = req.body
+      const user = req.session.user
+      if(new1 != new2){
+        req.session.error.push("New passwords do not match!")
+        console.log(req.session.error)
+
+        return res.redirect("/edit")
+      }
+      
+      const match = await bcrypt.compare(current, user.password)
+
+      if(!match){
+        req.session.error.push("Wrong password!")
+        return res.redirect("/edit")
+      }
+
+      const hashedPassword = await bcrypt.hash(new1,10)
+
+      const same = await bcrypt.compare(new1,user.password)
+
+      if(same){
+        req.session.error.push("New password cannot be the same as the current password!")
+        return res.redirect("/edit")
+      }
+
+      await db.query("UPDATE market set password = ? where email = ?", [hashedPassword,user.email])
+      req.session.success = "Password has been changed successfully"
+    }
+    res.redirect("/edit")
 })
 
 app.get("/delete/:id", async(req,res)=> {
