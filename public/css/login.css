@@ -3,8 +3,9 @@
 .container{display: flex; flex-direction: column; 
     align-items: center; justify-content: center; padding: 20px;
     margin: 20px auto; max-width: 500px;
-    border: 1px solid grey; border-radius: 12px; background: pink; }
+    border: 1px solid grey; border-radius: 12px; background: rgb(181, 181, 181); }
 .usertype{display: flex;   justify-content: space-between; width: 300px; margin-bottom: 30px;}
 a{text-decoration: none; color: green; border: 1px solid grey; padding: 4px; border-radius: 12px;}
 form{display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;}
 label{display: flex; justify-content: space-between; gap:5px}
+.msg{margin-top: 14px; color: red;}

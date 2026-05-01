@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/marketpage.css">
+    <title>Document</title>
+</head>
+<body>
+    <section class="top">
+        <img class="options" src="/img/menu.png">
+        <h1><%=user.market%></h1>
+    </section>
+
+    <div class="container">
+        <section class="left">
+            <p><a  href="/addOne"> <img class="image" src="/img/add.png"><span>Add Products</span></a></p>
+            <div>
+                <p><a href="/edit"> <img class="image" src="/img/profile.png"><span>Edit Profile</span></a></p>
+                <p><a href="/logout"> <img class="image" src="/img/logout.png"><span>Logout</span></a></p>
+            </div>
+        </section>
+
+        <section class="main">
+            <h2>PRODUCTS</h2>
+            <table>
+                <tbody>
+                    <tr>
+                        <td><a href=""><img class="arrows" src="img/left-arrow.png"></a></td>
+                        <%for(pro of pros){%>
+                            <td>
+                                <div class="product">
+                                    <img class="proImg" src="products/<%=pro.img%>">
+                                    <p><%=pro.title%></p>
+                                    <p>Stock: <%=pro.stock%></p>
+                                    <p>Normal Price: <%=pro["normal_price"]%>$</p>
+                                    <p>Discounted Price: <%=pro["discount_price"]%>$</p>
+                                </div>
+                            </td>
+                        <%}%> 
+                        <td><a href=""><img class="arrows" src="img/right-arrow.png"></a></td>
+                    </tr>
+                </tbody>            
+            </table>
+        </section>
+    </div>
+
+    <script src="script/market.js"></script>
+</body>
+</html>
+
+
