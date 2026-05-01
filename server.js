@@ -4,7 +4,8 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import db from "./db.js";
 import multer from "multer";
-import path from "path"
+import path from "path";
+import fs from "fs";
 
 const app = express();
 app.set("view engine", "ejs");
@@ -14,13 +15,13 @@ app.use(express.static("public"))
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "public/products"),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) ?? "";
-    const name = path.basename(file.originalname, ext);
+    const fixedName = Buffer.from(file.originalname, "latin1").toString("utf8"); // türkçe karakter sorunun çözmek için
+    const ext = path.extname(fixedName) ?? "";
+    const name = path.basename(fixedName, ext);
     cb(null, `${Date.now()}-${name}${ext}`);
   }
 });
 const upload = multer({ storage });
-
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -46,7 +47,7 @@ app.get("/", async(req, res) => {
     if(!req.session.user){
       res.render("login", {type,msg});
     }else{
-      res.redirect("/mainpage")
+      res.redirect("/marketpage")
     }
 });
 
@@ -54,17 +55,17 @@ app.post("/login", async (req,res)=>{
   try{
     const form = req.body;
     if(req.session.loginType == "consumer"){
-      const [rows] = await db.query("SELECT * FROM userInfo WHERE email = ?", [form.email]);
+      const [rows] = await db.query("SELECT * FROM consumer WHERE email = ?", [form.email]);
       if (rows.length) {
         req.session.loginType = "user";
         req.session.isAuthenticated = true;
-        res.redirect("/mainpage");
+        res.redirect("/marketpage");
       } else {
         req.session.msg = "Invalid username or password";   
         res.redirect("/");
       }
     }else{
-      const [rows] = await db.query("SELECT * FROM marketInfo WHERE email = ?", [form.email]);
+      const [rows] = await db.query("SELECT * FROM market WHERE email = ?", [form.email]);
       if (rows.length) {
         const user = rows[0];
         const match = await bcrypt.compare(form.password, user.password);
@@ -72,8 +73,8 @@ app.post("/login", async (req,res)=>{
             req.session.loginType = "market";
             req.session.user = user
             req.session.isAuthenticated = true;
-            req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; 
-            res.redirect("/mainpage");
+            req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; 
+            res.redirect("/marketpage");
         } else {
             req.session.msg = "Invalid username or password";
             res.redirect("/");
@@ -98,18 +99,18 @@ app.post("/signup", async(req, res) => {
     try {
       const form= req.body
       if(req.session.loginType== "consumer") {
-        const [check]= await db.query("select * from userInfo where email=?", [form.email])
+        const [check]= await db.query("select * from consumer where email=?", [form.email])
         if(!check.length) {
-          await db.query( "Insert into userInfo (email, name, city, district) VALUES (?,?,?,?)", [form.email, form.fullname, form.city,form.district])
+          await db.query( "Insert into consumer (email, name, city, district) VALUES (?,?,?,?)", [form.email, form.fullname, form.city,form.district])
         } else{
           req.session.msg= "You already have an account!"
           return res.redirect("/signup")
         }
       } else{
-        const [check]= await db.query("select * from marketInfo where email=?", [form.email])
+        const [check]= await db.query("select * from market where email=?", [form.email])
         if(!check.length) {
           const hashedPassword = await bcrypt.hash(form.password, 10);
-          await db.query( "Insert into marketInfo (email, password, market, city, district) VALUES (?,?,?,?,?)", [form.email, hashedPassword, form.market, form.city,form.district])
+          await db.query( "Insert into market (email, password, market, city, district) VALUES (?,?,?,?,?)", [form.email, hashedPassword, form.market, form.city,form.district])
         } else{
           req.session.msg= "This market already exists!"
           return res.redirect("/signup")
@@ -121,13 +122,14 @@ app.post("/signup", async(req, res) => {
     res.redirect("/")
 });   
 
-app.get("/mainpage", async (req,res)=>{
+app.get("/marketpage", async (req,res)=>{
   if (!req.session.isAuthenticated) {
         req.session.msg = "Please login to access the mainpage";
         return res.redirect("/");
     }
+  let [pros] = await db.query("SELECT * from products where email = ?",[req.session.user.email])
   if(req.session.loginType== "market") {
-    res.render("mainpage", { user: req.session.user });
+    res.render("marketpage", { user: req.session.user , pros});
   } else {
     res.redirect("/")
   }
@@ -136,18 +138,10 @@ app.get("/mainpage", async (req,res)=>{
 
 app.get("/addOne", async(req,res) => {
   try{
-    await db.query(`
-    CREATE TABLE IF NOT EXISTS products (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      img VARCHAR(255),
-      title VARCHAR(255) NOT NULL,
-      stock INT NOT NULL,
-      normal_price DECIMAL(10, 2) NOT NULL,
-      discount_price DECIMAL(10, 2) NOT NULL,
-      created_at DATETIME NOT NULL,
-      district VARCHAR(255)
-    )
-  `);
+    if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login to add a product";
+      return res.redirect("/");
+    }
     res.render("addpro", {user:req.session.user})
   }catch(error){
      console.log("error")
@@ -157,20 +151,38 @@ app.get("/addOne", async(req,res) => {
 app.post("/addOne", upload.single("photo"), async (req, res) => {
   try{
 
+    if (!req.session.isAuthenticated || !req.session.user) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path); // kullacının yetkisi yoksa kaydedilen resimi sil
+      }
+      req.session.msg = "Please login to add a product";
+      return res.redirect("/");
+    }
+
     if (!req.file) {
       return res.status(400).send("No image!");
     }
-    const ext = path.extname(req.file.originalname).toLowerCase()
+
+    const ext = path.extname(req.file.originalname).toLocaleLowerCase()
     const form= req.body
+
     if (![".jpg", ".jpeg", ".png"].includes(ext)) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path); // istenmeyen uzantılı dosyalar da silindi 
+      }
       return res.redirect("/")
     }
-    await db.query("INSERT INTO products (img, title, stock, normal_price, discount_price, created_at, district) VALUES (?, ?, ?,?,?,?,?)", 
-      [ req.file.filename, form.title,form.stock,form.normal,form.discount,form.date, req.session.user.district ])
+
+    await db.query("INSERT INTO products (img, title, stock, normal_price, discount_price, expire_date, email,district) VALUES (?,?,?,?,?,?,?,?)", 
+      [ req.file.filename, form.title,form.stock,form.normal,form.discount,form.date, req.session.user.email,req.session.user.district ])
+      
     res.redirect("/addOne")
   }catch(error){
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path); // database'e girmezse resimi producstan sil
+      }
      console.log("error")
-     return res.status(400).send(error);
+     return res.status(400).send(error.message);
   }
 }) 
 
