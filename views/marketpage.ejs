@@ -36,7 +36,7 @@
 
                         <%for(pro of shown){%>
                             <td>
-                                <div class="product <%= pro['expire_date'].toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10) ? 'expired' : '' %>">
+                                <div class="product <%= pro['expire_date'].toISOString().slice(0, 10) < new Date().toISOString().slice(0, 10) ? 'expired' : '' %>">
                                     <img class="proImg" src="/products/<%=pro.img%>">
                                     <p><%=pro.title%></p>
                                     <p>Stock: <%=pro.stock%></p>
@@ -44,7 +44,7 @@
                                     <p>Discounted Price: <%=pro["discount_price"]%>$</p>
                                     <p>Expiration Date: <%=pro["expire_date"].toLocaleDateString(`tr-TR`)%></p>
                                     <div class="proctrl">
-                                        <a href=""><img class="image" src="/img/edit.png"></a>
+                                        <a href="/edit-product/<%=pro.id%>"><img class="image" src="/img/edit.png"></a>
                                         <a href="/delete/<%=pro.id%>"><img class="image" src="/img/delete.png"></a>
                                     </div>
                                 </div>

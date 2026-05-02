@@ -4,15 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Product</title>
+    <link rel="stylesheet" href="/css/add-pro.css">
 </head>
 <body>
+    
     <form action="/addOne" method="post" enctype="multipart/form-data">
-        <p>Photo : <input type="file" name="photo"></p>
-        <p>Title : <input type="text" name="title" autofocus></p>
-        <p>Stock : <input type="text" name="stock"></p>
-        <p>Normal Price : <input type="text" name="normal"></p>
-        <p>Discounted Price : <input type="text" name="discount"></p>
-        <p>Expiration Date : <input type="date" name="date"></p>
+        <h1>Add a product</h1>
+        <p>Photo : <input type="file" name="photo" class="file"></p>
+        <p>Title : <input type="text" name="title" value="<%=form?.title%>"></p>
+        <p>Stock : <input type="text" name="stock" value="<%=form?.stock%>"></p>
+        <p>Normal Price : <input type="text" name="normal" value="<%=form?.normal%>"></p>
+        <p>Discounted Price : <input type="text" name="discount" value="<%=form?.discount%>"></p>
+        <p>Expiration Date : <input type="date" name="date" value="<%=form?.date%>"></p>
+
+        <% if (errorList && errorList.length > 0) { %>
+            <div class="error-container">
+                <% errorList.forEach(err => { %>
+                    <p class="error-msg"><%= err.msg %></p>
+                <% }) %>
+            </div>
+        <% } %>
+
         <p><button>Upload</button></p>
     </form>
 

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/edit-pro.css">
+</head>
+<body>
+    <form action="/edit-product/<%= change.id %>" method="post" enctype="multipart/form-data">
+        <h1>Edit product</h1>
+        <p class="current">Current Photo:</p>
+        <img src="/products/<%=change.img %>" alt="Product Image" ">
+        <p class="newfile">New Photo : <input type="file" name="photo" class="file" ></p>
+        <p class="title">Title : <input type="text" name="title" autofocus value="<%=change.title%>"></p>
+        <p class="stock">Stock : <input type="text" name="stock" value="<%=change.stock%>"></p>
+        <p class="normal">Normal Price : <input type="text" name="normal" value="<%=change.normal_price%>"></p>
+        <p class="discount">Discounted Price : <input type="text" name="discount" value="<%=change.discount_price%>"></p>
+        <p class="date">Expiration Date : <input id="date" type="date" name="date" value="<%= change.expire_date ? new Date(change.expire_date).toISOString().split('T')[0] : '' %>"></p>
+
+        <% if (errorList && errorList.length > 0) { %>
+            <div class="error-container">
+                <% errorList.forEach(err => { %>
+                    <p class="error-msg"><%= err.msg %></p>
+                <% }) %>
+            </div>
+        <% } %>
+        
+        <p class="button"><button>Upload</button></p>
+    </form>
+</body>
+</html>
