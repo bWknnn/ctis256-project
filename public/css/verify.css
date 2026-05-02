@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+* {margin: 0;padding: 0;box-sizing: border-box;font-family: "Cantarell", sans-serif;}
+body {background: #bff8c7;}
+.container{min-height: 100vh;display: flex;align-items: center;justify-content: center;padding: 25px;}
+.box {width: 100%;max-width: 520px;background: white;border-radius: 24px;
+    padding: 45px 35px;text-align: center;box-shadow: 0 0 40px rgba(64, 129, 33, 0.507);
+}
+h1 {font-size: 34px;color: #24262b;margin-bottom: 12px;font-weight: 700;}
+p {color: #777;font-size: 16px;margin-bottom: 28px;}
+.inputs {display: flex;justify-content: center;gap: 12px;margin-bottom: 28px;}
+input {
+  width: 56px;
+  height: 64px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  background: #f2f2f2;
+  text-align: center;
+  font-size: 30px;
+  font-weight: bold;
+  outline: none;
+  transition: 0.2s ease;
+}
+input:focus {
+  border-color: #8cc63f;
+  background: #ecf0e8;
+  box-shadow: 0 0 0 4px rgba(139, 198, 63, 0.192);
+}
+button {
+  width: 100%;
+  height: 56px;
+  border: 1px solid #7bb832 ;
+  border-radius: 14px;
+  background: #8cc63f;
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+button:hover { background: #7bb832;}
+.error {color: red;font-weight: bold;margin-top: 18px; margin-bottom: 0;}

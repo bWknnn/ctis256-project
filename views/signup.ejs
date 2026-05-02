@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/login.css">
-    <title>Document</title>
+    <link rel="stylesheet" href="css/signin.css">
+    <title>Signup</title>
 </head>
 <body>
     <div class="container">
@@ -62,8 +62,11 @@
                 <button type="submit">Sign Up</button>
             </form>
         <%}%>
-        <% if(msg) {%>
-            <p><%=msg%></p>
+        <div>
+            <p>Already have an account <a class="signup" href="/">SIGN IN</a> here</p>
+        </div>
+        <% if (msg) { %>
+            <p class="msg <%= msg.type %>"><%= msg.text %></p>
         <% } %>
     </div>
 </body>

@@ -9,4 +9,6 @@
 a{text-decoration: none; color: green; border: 1px solid grey; padding: 4px; border-radius: 12px;}
 form{display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;}
 label{display: flex; justify-content: space-between; gap:5px}
-.msg{margin-top: 14px; color: red;}
+.msg{margin-top: 14px; font-weight: bold;}
+.error{color: red;}
+.success{color: green;}
