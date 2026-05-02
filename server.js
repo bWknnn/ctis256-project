@@ -7,13 +7,21 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import {body, validationResult} from "express-validator"
-
+import { email } from "./emails/template.js";
+import nodemailer from "nodemailer";
 
 const app = express();
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"))
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "public/products"),
   filename: (req, file, cb) => {
@@ -31,12 +39,12 @@ app.use(session({
   saveUninitialized: false
 }));
 
-app.get("/marketLogin", async(req, res) => {
+app.get("/market-signin", async(req, res) => {
     req.session.loginType = "market"
     res.redirect("/");
 });
 
-app.get("/userLogin", async(req, res) => {
+app.get("/user-signin", async(req, res) => {
     req.session.loginType = "consumer"
     res.redirect("/");
 });
@@ -47,23 +55,27 @@ app.get("/", async(req, res) => {
     const msg = req.session.msg
     req.session.msg = null
     if(!req.session.user){
-      res.render("login", {type,msg});
+      res.render("signin", {type,msg});
     }else{
       res.redirect("/marketpage")
     }
 });
 
-app.post("/login", async (req,res)=>{
+app.post("/signin", async (req,res)=>{
   try{
     const form = req.body;
     if(req.session.loginType == "consumer"){
       const [rows] = await db.query("SELECT * FROM consumer WHERE email = ?", [form.email]);
+      const user = rows[0];
       if (rows.length) {
-        req.session.loginType = "user";
+        req.session.user = user
         req.session.isAuthenticated = true;
-        res.redirect("/marketpage");
+        res.redirect("/consumerpage");
       } else {
-        req.session.msg = "Invalid username or password";   
+        req.session.msg = {
+          type:"error",
+          text:"Invalid username or password"
+        }   
         res.redirect("/");
       }
     }else{
@@ -72,17 +84,22 @@ app.post("/login", async (req,res)=>{
         const user = rows[0];
         const match = await bcrypt.compare(form.password, user.password);
         if (match) {
-            req.session.loginType = "market";
             req.session.user = user
             req.session.isAuthenticated = true;
             req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; 
             res.redirect("/marketpage");
         } else {
-            req.session.msg = "Invalid username or password";
+            req.session.msg ={
+               type:"error",
+               text:"Invalid username or password"
+            }
             res.redirect("/");
         }
       } else {
-        req.session.msg = "Invalid username or password";   
+        req.session.msg ={
+               type:"error",
+               text:"Invalid username or password"
+        }
         res.redirect("/");
       }
     }
@@ -105,30 +122,109 @@ app.post("/signup", async(req, res) => {
         if(!check.length) {
           await db.query( "Insert into consumer (email, name, city, district) VALUES (?,?,?,?)", [form.email, form.fullname, form.city,form.district])
         } else{
-          req.session.msg= "You already have an account!"
+          req.session.msg ={
+               type:"error",
+               text:"You already have an account!"
+          }  
           return res.redirect("/signup")
         }
       } else{
         const [check]= await db.query("select * from market where email=?", [form.email])
         if(!check.length) {
-          const hashedPassword = await bcrypt.hash(form.password, 10);
-          await db.query( "Insert into market (email, password, market, city, district) VALUES (?,?,?,?,?)", [form.email, hashedPassword, form.market, form.city,form.district])
+          const code = Math.floor(100000 + Math.random() * 900000).toString();
+          const verifyCode = {code, expire:Date.now() + 5 * 60 * 1000, form};
+          req.session.verifyCode = verifyCode
+
+          transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: form.email,
+            subject: "Verification Code",
+            text: `Your verification code is: ${code}`,
+            html: email(code),
+          });
+          return res.redirect("/verify-email")
+          
         } else{
-          req.session.msg= "This market already exists!"
+          req.session.msg ={
+               type:"error",
+               text:"This market already exists!"
+          }
           return res.redirect("/signup")
         }
       }
     } catch (error) {
-      console.log("error")
+      console.log(error)
     }
     res.redirect("/")
 });   
 
+app.get("/verify-email", (req,res)=>{
+  if (!req.session.verifyCode) {
+    req.session.msg = {
+      type: "error",
+      text: "Please sign up first."
+    };
+    return res.redirect("/signup");
+  }
+  const msg = req.session.msg
+  req.session.msg = null
+  res.render("verify", {msg})
+})
+
+app.post("/verify-email", async (req,res)=>{
+  try{
+    const enteredCode = `${req.body.d1}${req.body.d2}${req.body.d3}${req.body.d4}${req.body.d5}${req.body.d6}`;
+    
+    if (!req.session.verifyCode) {
+      req.session.msg ={
+               type:"error",
+               text:"Verification session expired. Please sign up again."
+      }
+      return res.redirect("/signup");
+    }
+
+    if (Date.now() > req.session.verifyCode.expire) {
+      req.session.verifyCode = null;
+      req.session.msg ={
+               type:"error",
+               text:"Verification code expired. Please sign up again."
+      }
+      return res.redirect("/signup");
+    }
+
+    if (enteredCode != req.session.verifyCode.code) {
+      req.session.msg ={
+               type:"error",
+               text:"Wrong verification code"
+      }
+      return res.redirect("/verify-email");
+    }
+
+    const form = req.session.verifyCode.form
+    
+    const hashedPassword = await bcrypt.hash(form.password, 10);
+    await db.query( "Insert into market (email, password, market, city, district) VALUES (?,?,?,?,?)", [form.email, hashedPassword, form.market, form.city,form.district])
+    
+    req.session.verifyCode = null;
+    req.session.loginType = "market";
+    req.session.msg ={
+               type:"success",
+               text:"Market account created successfully. You can sign in now."
+    }
+    return res.redirect("/");
+  }catch(error){
+    console.log("error");
+  }
+})
+
 app.get("/marketpage", async (req,res)=>{
   if (!req.session.isAuthenticated) {
-        req.session.msg = "Please login to access the mainpage";
-        return res.redirect("/");
-    }
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in to access the mainpage"
+      }
+      return res.redirect("/");
+  }
 
   let page=req.query.page ?? 1
   page= parseInt(page)
@@ -148,7 +244,10 @@ app.get("/marketpage", async (req,res)=>{
 app.get("/addOne", async(req,res) => {
   try{
     if (!req.session.isAuthenticated || !req.session.user) {
-      req.session.msg = "Please login to add a product";
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in to add a product"
+      }
       return res.redirect("/");
     }
     res.render("addpro", {user:req.session.user})
@@ -164,7 +263,10 @@ app.post("/addOne", upload.single("photo"), async (req, res) => {
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path); // kullacının yetkisi yoksa kaydedilen resimi sil
       }
-      req.session.msg = "Please login to add a product";
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in to add a product"
+      }
       return res.redirect("/");
     }
 
@@ -203,7 +305,10 @@ app.get("/logout", async (req,res)=>{
 
 app.get("/edit", async(req,res)=> {
   if (!req.session.isAuthenticated || !req.session.user) {
-      req.session.msg = "Please login first";
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in first"
+      }
       return res.redirect("/");
   }
   const success = req.session.success
@@ -218,7 +323,10 @@ app.get("/edit", async(req,res)=> {
 
 app.post("/edit", async(req,res)=>{
   if (!req.session.isAuthenticated || !req.session.user) {
-      req.session.msg = "Please login first";
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in first"
+      }
       return res.redirect("/");
   }
   const form = req.body
@@ -241,7 +349,10 @@ app.post("/edit-password",
   body("new2").trim().notEmpty().withMessage("Write the new password again."),
   async (req,res)=>{
     if (!req.session.isAuthenticated || !req.session.user) {
-      req.session.msg = "Please login first";
+      req.session.msg ={
+                type:"error",
+                text:"Please sign in first"
+      }
       return res.redirect("/");
     }
     const errors = validationResult(req);

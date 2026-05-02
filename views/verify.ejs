@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verify Email</title>
+  <link rel="stylesheet" href="/css/verify.css">
+</head>
+<body>
+  <div class="container">
+    <div class="box">
+      <h1>Email Verification</h1>
+      <p>Enter the 6-digit code we sent to your email.</p>
+      <form action="/verify-email" method="POST">
+          <div class="inputs">
+              <input type="text" name="d1" maxlength="1">
+              <input type="text" name="d2" maxlength="1">
+              <input type="text" name="d3" maxlength="1">
+              <input type="text" name="d4" maxlength="1">
+              <input type="text" name="d5" maxlength="1">
+              <input type="text" name="d6" maxlength="1">
+            </div>
+            <button type="submit">Verify</button>
+        </form>
+        <% if (msg) { %>
+          <p class="<%= msg.type %>"><%= msg.text %></p>
+        <% } %>
+    </div>
+  </div>
+ <script src="/script/verify.js"></script>
+</body>
+</html>
