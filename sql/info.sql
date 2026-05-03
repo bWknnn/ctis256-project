@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `products` (
       `expire_date` DATE NOT NULL DEFAULT (CURRENT_DATE),
       `email` varchar(100) NOT NULL,
       `district` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL
-    )ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+    )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `consumer`;
 CREATE TABLE IF NOT EXISTS `consumer` (
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `consumer` (
   `city` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
   `district` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   PRIMARY KEY (`email`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `market`;
 CREATE TABLE IF NOT EXISTS `market` (
@@ -53,8 +53,25 @@ CREATE TABLE IF NOT EXISTS `market` (
   `city` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
   `district` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci NOT NULL,
   PRIMARY KEY (`email`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+DROP TABLE IF EXISTS `cart`;
+
+CREATE TABLE IF NOT EXISTS `cart` (
+  `id` INT AUTO_INCREMENT,
+  `email` VARCHAR(100) NOT NULL,
+  `product_id` INT NOT NULL,
+
+  PRIMARY KEY (`id`),
+
+  FOREIGN KEY (`email`) REFERENCES `consumer`(`email`)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`)
+    ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 --
 -- Dumping data for table `products and market`
 --
