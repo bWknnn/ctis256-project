@@ -13,6 +13,8 @@ const app = express();
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"))
+app.use(express.json());
+
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "public/products"),
@@ -61,7 +63,8 @@ app.post("/login", async (req,res)=>{
       if (rows.length) {
         req.session.loginType = "user";
         req.session.isAuthenticated = true;
-        res.redirect("/marketpage");
+        req.session.user = rows[0]
+        res.redirect("/userpage");
       } else {
         req.session.msg = "Invalid username or password";   
         res.redirect("/");
@@ -143,6 +146,20 @@ app.get("/marketpage", async (req,res)=>{
     res.redirect("/")
   }
   
+})
+
+app.get("/userpage", async (req, res) => {
+  if (!req.session.isAuthenticated) {
+        req.session.msg = "Please login to access the mainpage";
+        return res.redirect("/");
+    }
+  if (req.session.loginType == "user") {
+    const [rows] = await db.query("select * from products")
+    res.render("userpage", {products: rows, success: req.session.success})
+  } else {
+    req.session.msg = "This page is only accessible to consumer users"
+    res.redirect("/")
+  }
 })
 
 app.get("/addOne", async(req,res) => {
@@ -285,6 +302,106 @@ app.get("/delete/:id", async(req,res)=> {
 
   res.redirect("/marketpage" )
 })
+
+app.get("/edit-user", (req, res) => {
+  // if (!req.session.isAuthenticated || !req.session.user) {
+  //     req.session.msg = "Please login first";
+  //     return res.redirect("/");
+  // }
+  const success = req.session.success
+  const errors = req.session.error || []
+  req.session.activeTab ??= "info"
+
+  req.session.success = null;
+  req.session.error = [];
+  res.render("edit-user", {user:req.session.user, success, errors, activeTab:req.session.activeTab})
+})
+
+app.post("/edit-user", async (req, res) => {
+  // if (!req.session.isAuthenticated || !req.session.user) {
+  //     req.session.msg = "Please login first";
+  //     return res.redirect("/");
+  // }
+  const form = req.body
+  const user = req.session.user
+  req.session.activeTab = "info";
+  if(form.email != user.email || form.name != user.name || form.city != user.city || form.district != user.district){
+    req.session.success = "Information has been changed successfully!"
+    await db.query("UPDATE consumer SET email = ?, name = ?, city = ?, district = ? WHERE email = ?",[form.email,form.name,form.city,form.district,user.email]);
+    req.session.user.email = form.email;
+    req.session.user.name = form.name;
+    req.session.user.city = form.city;
+    req.session.user.district = form.district;
+  }
+  res.redirect("/edit-user")
+})
+
+app.post("/cart/add/:productid", async (req, res) => {
+  const prod_id = req.params.productid
+  const email = req.session.user.email
+  await db.query("insert into cart (email, product_id) values (?, ?)", [email, prod_id])
+  req.session.success = "Product added successfully"
+  res.redirect("/userpage")
+})
+
+app.get("/cart", async (req, res) => {
+  const email = req.session.user?.email;
+
+  const [rows] = await db.query(
+    `SELECT p.* FROM cart c
+    JOIN products p ON c.product_id = p.id
+    WHERE c.email = ?`, [email]
+  );
+
+  const groupedCart = {};
+
+  rows.forEach(item => {
+    if (groupedCart[item.id]) {
+      groupedCart[item.id].quantity += 1;
+    } else {
+      groupedCart[item.id] = {
+        ...item,
+        quantity: 1
+      };
+    }
+  });
+
+  const finalCart = Object.values(groupedCart);
+
+
+  res.render("cart", {cart: finalCart})
+})
+
+app.post("/cart/update", async (req, res) => {
+  const email = req.session.user?.email;
+  const { productId, change } = req.body;
+
+  if (!email) return res.status(401).json({ error: "Not logged in" });
+
+  if (change === 1) {
+    await db.query(
+      "INSERT INTO cart (email, product_id) VALUES (?, ?)",
+      [email, productId]
+    );
+  } else {
+    await db.query(
+      `DELETE FROM cart 
+       WHERE email = ? AND product_id = ? 
+       LIMIT 1`,
+      [email, productId]
+    );
+  }
+
+  const [rows] = await db.query(
+    `SELECT COUNT(*) as quantity 
+     FROM cart 
+     WHERE email = ? AND product_id = ?`,
+    [email, productId]
+  );
+
+  res.json({ quantity: rows[0].quantity });
+});
+
 
 
 app.listen(process.env.PORT, () => {

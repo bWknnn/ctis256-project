@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cart</title>
+    <link rel="stylesheet" href="/css/cart.css">
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>Your Cart</h2>
+
+        <a href="/userpage" class="back-btn">
+            ← Back
+        </a>
+    </div>
+
+    <div class="cart-container">
+
+        <% if(cart && cart.length){ %>
+
+            <% cart.forEach(item => { %>
+
+                <div class="cart-card" id="item-<%= item.id %>">
+
+                    <img src="/products/<%= item.img %>" class="cart-image">
+
+                    <div class="cart-info">
+                        <h3><%= item.title %></h3>
+
+                        <p class="price">
+                            <span>$<%= item.normal_price %></span>
+                            $<%= item.discount_price %>
+                        </p>
+
+                        <p>Stock: <%= item.stock %></p>
+
+                        <p>
+                            Expires:
+                            <%= new Date(item.expire_date).toLocaleDateString('en-GB') %>
+                        </p>
+                    </div>
+
+                    <div class="quantity-controls">
+                        <button class="qty-btn" onclick="updateQuantity(`<%= item.id %>`, -1)">−</button>
+                        <span id="qty-<%= item.id %>"><%= item.quantity %></span>
+                        <button class="qty-btn" onclick="updateQuantity(`<%= item.id %>`, 1)">+</button>
+                    </div>
+
+                </div>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <p class="empty-cart">Your cart is empty</p>
+
+        <% } %>
+
+    </div>
+    <script src="/cart.js"></script>
+</body>
+</html>
