@@ -249,7 +249,7 @@ app.get("/userpage", async (req, res) => {
         req.session.msg = "Please login to access the mainpage";
         return res.redirect("/");
     }
-  if (req.session.loginType == "user") {
+  if (req.session.loginType == "consumer") {
     const [rows] = await db.query("select * from products")
     res.render("userpage", {products: rows, success: req.session.success})
   } else {
@@ -504,10 +504,10 @@ app.post("/edit-product/:id", upload.single("photo"),
 });
 
 app.get("/edit-user", (req, res) => {
-  // if (!req.session.isAuthenticated || !req.session.user) {
-  //     req.session.msg = "Please login first";
-  //     return res.redirect("/");
-  // }
+  if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login first";
+      return res.redirect("/");
+  }
   const success = req.session.success
   const errors = req.session.error || []
   req.session.activeTab ??= "info"
@@ -518,10 +518,10 @@ app.get("/edit-user", (req, res) => {
 })
 
 app.post("/edit-user", async (req, res) => {
-  // if (!req.session.isAuthenticated || !req.session.user) {
-  //     req.session.msg = "Please login first";
-  //     return res.redirect("/");
-  // }
+  if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = "Please login first";
+      return res.redirect("/");
+  }
   const form = req.body
   const user = req.session.user
   req.session.activeTab = "info";
