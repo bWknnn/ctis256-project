@@ -114,7 +114,7 @@ app.get("/signup", async(req, res) => {
   res.render("signup", {type: req.session.loginType, msg})
 })
 
-app.post("/signup", async(req, res) => {
+app.post("/signup",async(req, res) => {
     try {
       const form= req.body
       if(req.session.loginType== "consumer") {
@@ -250,45 +250,62 @@ app.get("/addOne", async(req,res) => {
       }
       return res.redirect("/");
     }
-    res.render("addpro", {user:req.session.user})
+    res.render("addpro", {user:req.session.user, form:null, errorList:null})
   }catch(error){
      console.log("error")
   }
 })
 
-app.post("/addOne", upload.single("photo"), async (req, res) => {
+app.post("/addOne", upload.single("photo"),
+  body("title").trim().notEmpty().withMessage("Product title cannot be empty"),
+  body("stock").trim().notEmpty().withMessage("Stock value cannot be empty"),
+  body("normal").trim().notEmpty().withMessage("Normal price cannot be empty"),
+  body("discount").trim().notEmpty().withMessage("Discounted price cannot be empty"),
+  body("date").trim().notEmpty().withMessage("Expiration date cannot be empty"),
+   async (req, res) => {
   try{
 
-    if (!req.session.isAuthenticated || !req.session.user) {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path); // kullacının yetkisi yoksa kaydedilen resimi sil
-      }
-      req.session.msg ={
-                type:"error",
-                text:"Please sign in to add a product"
-      }
-      return res.redirect("/");
-    }
-
-    if (!req.file) {
-      return res.status(400).send("No image!");
-    }
-
-    const ext = path.extname(req.file.originalname).toLocaleLowerCase()
+    const errors= validationResult(req);
+    let errorList = errors.isEmpty() ? [] : errors.array();
     const form= req.body
-
-    if (![".jpg", ".jpeg", ".png"].includes(ext)) {
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path); // istenmeyen uzantılı dosyalar da silindi 
+    
+   
+      if (!req.session.isAuthenticated || !req.session.user) {
+            if (req.file && fs.existsSync(req.file.path)) {
+              fs.unlinkSync(req.file.path); // kullacının yetkisi yoksa kaydedilen resimi sil
+            }
+            req.session.msg ={
+                      type:"error",
+                      text:"Please sign in to add a product"
+            }
+            return res.redirect("/");
       }
-      return res.redirect("/")
-    }
 
-    await db.query("INSERT INTO products (img, title, stock, normal_price, discount_price, expire_date, email,district) VALUES (?,?,?,?,?,?,?,?)", 
-      [ req.file.filename, form.title,form.stock,form.normal,form.discount,form.date, req.session.user.email,req.session.user.district ])
+      if (!req.file) {
+        errorList.push({ msg: "Please upload a product image." });
+      } else {
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        if (![".jpg", ".jpeg", ".png"].includes(ext)) {
+          fs.unlinkSync(req.file.path); 
+          errorList.push({ msg: "Only .jpg, .jpeg, and .png formats are allowed." });
+        }
+      }
+
+      //error varsa direk return atsın if kullanmayalım
+      if (errorList.length > 0) {
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        return res.render("addpro", {form:req.body, errorList});
+      }
       
-    res.redirect("/addOne")
-  }catch(error){
+
+      await db.query("INSERT INTO products (img, title, stock, normal_price, discount_price, expire_date, email,district) VALUES (?,?,?,?,?,?,?,?)", 
+        [ req.file.filename, form.title,form.stock,form.normal,form.discount,form.date, req.session.user.email,req.session.user.district ])
+            
+      res.redirect("/addOne")
+    
+  } catch(error){
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path); // database'e girmezse resimi producstan sil
       }
@@ -397,6 +414,77 @@ app.get("/delete/:id", async(req,res)=> {
   res.redirect("/marketpage" )
 })
 
+app.get("/edit-product/:id",
+   async(req,res)=> {
+  if (!req.session.isAuthenticated || !req.session.user) {
+     req.session.msg ={
+                 type:"error",
+                 text:"Please sign in first"
+       }
+       return res.redirect("/");
+    }
+  let [change]= await db.query("SELECT * from products where id=?", [req.params.id])
+
+  change=change[0]
+  
+  res.render("edit-product", {change, form:null, errorList:null})
+})
+
+app.post("/edit-product/:id", upload.single("photo"),
+  body("title").trim().notEmpty().withMessage("Product title cannot be empty"),
+  body("stock").trim().notEmpty().withMessage("Stock value cannot be empty"),
+  body("normal").trim().notEmpty().withMessage("Normal price cannot be empty"),
+  body("discount").trim().notEmpty().withMessage("Discounted price cannot be empty"),
+  body("date").trim().notEmpty().withMessage("Expiration date cannot be empty"),
+  async (req, res) => {
+    try {
+      
+      const errors= validationResult(req);
+      let errorList = errors.isEmpty() ? [] : errors.array();
+
+      if (!req.session.isAuthenticated || !req.session.user) {
+            if (req.file && fs.existsSync(req.file.path)) {
+              fs.unlinkSync(req.file.path); // kullacının yetkisi yoksa kaydedilen resimi sil
+            }
+            req.session.msg ={
+                      type:"error",
+                      text:"Please sign in to add a product"
+            }
+            return res.redirect("/");
+      }
+
+      const form = req.body;
+
+      let [change]= await db.query("SELECT * from products where id=?", [req.params.id])
+      change=change[0]
+
+      const finalImage = req.file ? req.file.filename : change.img;
+
+      if(req.file){
+          const ext = path.extname(req.file.originalname).toLowerCase();
+          if (![".jpg", ".jpeg", ".png"].includes(ext)) {
+            fs.unlinkSync(req.file.path); 
+            errorList.push({ msg: "Only .jpg, .jpeg, and .png formats are allowed." });
+          }
+      }
+      
+      
+      if (errorList.length > 0) {
+        return res.render("edit-product", {form:req.body, errorList, change});
+      }
+
+      await db.query(
+          "UPDATE products SET title = ?, stock = ?, normal_price = ?, discount_price = ?, expire_date = ?, img = ? WHERE id = ?",
+          [form.title, form.stock, form.normal, form.discount, form.date, finalImage, req.params.id]);
+      req.session.success = "Information has been changed successfully!";
+      
+      res.redirect(`/marketpage`);
+
+    }catch (error) {
+      console.error(error);
+      res.status(500).send("error editing product");
+    }
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
