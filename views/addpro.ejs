@@ -18,9 +18,9 @@
         <p>Expiration Date : <input type="date" name="date" value="<%=form?.date%>"></p>
 
         <% if (errorList && errorList.length > 0) { %>
-            <div class="error-container">
+            <div class="container">
                 <% errorList.forEach(err => { %>
-                    <p class="error-msg"><%= err.msg %></p>
+                    <p class="msg"><%= err.msg %></p>
                 <% }) %>
             </div>
         <% } %>

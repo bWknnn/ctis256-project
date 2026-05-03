@@ -286,15 +286,13 @@ app.post("/addOne", upload.single("photo"),
       } else {
         const ext = path.extname(req.file.originalname).toLowerCase();
         if (![".jpg", ".jpeg", ".png"].includes(ext)) {
-          // Delete file immediately if wrong format
           fs.unlinkSync(req.file.path); 
           errorList.push({ msg: "Only .jpg, .jpeg, and .png formats are allowed." });
         }
       }
 
-      // 4. If ANY errors exist (text or file), Re-render
+      //error varsa direk return atsın if kullanmayalım
       if (errorList.length > 0) {
-        // Cleanup: If a file was valid but a text field was empty, delete the file to avoid orphans
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
@@ -465,15 +463,12 @@ app.post("/edit-product/:id", upload.single("photo"),
       if(req.file){
           const ext = path.extname(req.file.originalname).toLowerCase();
           if (![".jpg", ".jpeg", ".png"].includes(ext)) {
-            // Delete file immediately if wrong format
             fs.unlinkSync(req.file.path); 
             errorList.push({ msg: "Only .jpg, .jpeg, and .png formats are allowed." });
           }
       }
       
       
-
-      // 4. If ANY errors exist (text or file), Re-render
       if (errorList.length > 0) {
         return res.render("edit-product", {form:req.body, errorList, change});
       }

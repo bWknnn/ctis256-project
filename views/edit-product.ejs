@@ -19,14 +19,16 @@
         <p class="date">Expiration Date : <input id="date" type="date" name="date" value="<%= change.expire_date ? new Date(change.expire_date).toISOString().split('T')[0] : '' %>"></p>
 
         <% if (errorList && errorList.length > 0) { %>
-            <div class="error-container">
+            <div class="container">
                 <% errorList.forEach(err => { %>
-                    <p class="error-msg"><%= err.msg %></p>
+                    <p class="msg"><%= err.msg %></p>
                 <% }) %>
             </div>
         <% } %>
         
         <p class="button"><button>Upload</button></p>
     </form>
+
+    <a href="/marketpage">Back to Main Page</a>
 </body>
 </html>

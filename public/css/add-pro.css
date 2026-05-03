@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 * {margin: 0;padding: 0;box-sizing: border-box;font-family: "Cantarell", sans-serif;}
 body {background-color: #bff8c7; height: 100vh; display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 20px;}
-
 form {
     background: white;
     width: 100%;
@@ -12,7 +11,6 @@ form {
     display: flex;
     flex-direction: column;
 }
-
 p {
     display: flex;
     flex-direction: column;
@@ -22,12 +20,7 @@ p {
     color: #24262b;
     margin-bottom: 16px;
 }
-
-form p:last-of-type {
-    margin-bottom: 0;
-    margin-top: 10px;
-}
-
+form p:last-of-type {margin-bottom: 0;margin-top: 10px;}
 input {
     width: 100%;
     padding: 12px 14px;
@@ -38,16 +31,8 @@ input {
     background-color: #fff;
     transition: 0.2s ease;
 }
-
 input:focus {border-color: #28eb25;box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);}
-
-.file {
-    padding: 10px;
-    border: 1px dashed #d1d5db;
-    cursor: pointer;
-    background: #f9f9f9;
-}
-
+.file {padding: 10px;border: 1px dashed #d1d5db;cursor: pointer;background: #f9f9f9;}
 button {
     width: 100%;
     padding: 14px;
@@ -59,30 +44,8 @@ button {
     font-weight: 700;
     cursor: pointer;
 }
-
 button:hover {background-color: #268e2d;}
 h1{margin:0px auto 22px auto}
-
-a {
-    margin-top: 20px;
-    color: #0e5212;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;  
-}
-
-.error-container {
-    background-color: #ffecec;
-    border-left: 4px solid #ff4d4d;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-}
-
-.error-msg {
-    color: #d8000c;
-    font-size: 13px;
-    font-weight: 600;
-    margin: 5px 0 !important; /* Overriding default p margins */
-    text-align: left;
-}
+a {margin-top: 20px;color: #0e5212;text-decoration: none;font-weight: 600;font-size: 16px;  }
+.container {background-color: #ffecec;border-left: 4px solid #ff4d4d;padding: 10px;margin-bottom: 15px;border-radius: 4px;}
+.msg {color: #d8000c;font-size: 13px;font-weight: 600;margin: 5px 0 ;text-align: left;}

@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 * { margin: 0;padding: 0;box-sizing: border-box;font-family: "Cantarell", sans-serif;}
-body {background-color: #bff8c7; height: 100vh;display: flex;align-items: center;justify-content: center;padding: 20px;}
+body {background-color: #bff8c7; height: 100vh;display: flex;align-items: center;justify-content: center;padding: 20px; flex-direction: column;}
 form {
     background: white;
     width: 100%;
@@ -15,29 +15,13 @@ form {
 }
 h1, .current, img,.newfile,.button {  grid-column: 1 / -1; }
 h1 {font-size: 24px;color: #24262b;margin-bottom: 10px;text-align: center;}
-.current {
-    text-align: center;
-    color: #555;
-    margin-bottom: 0px;
-    font-weight: 700;
-    font-size: 14px;
-}
-
+.current {text-align: center;color: #555;margin-bottom: 0px;font-weight: 700;font-size: 14px;}
 img {justify-self: center; width: 180px;border: 2px solid #f2f2f2;margin-bottom: 5px; }
 .newfile {margin-bottom: 25px;}
 .title,.normal,.date {grid-column: 1; }
 .stock, .discount {grid-column: 3; }
 .date {grid-column: 1 / -1; margin-bottom: 10px;}
-
-p {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #555;
-}
-
+p {display: flex;flex-direction: column;gap: 5px;font-size: 13px;font-weight: 700;color: #555;}
 input {
     padding: 10px 12px;
     border: 1px solid #ddd;
@@ -46,11 +30,9 @@ input {
     outline: none;
     transition: 0.2s ease;
 }
-
 input:focus { border-color: #36b73e; box-shadow: 0 0 0 3px rgba(54, 183, 62, 0.1);}
 .file {padding: 8px;border: 1px dashed #ddd;background-color: #fdfdfd;}
 #date {width: 100%;}
-
 button {
     background-color: #36b73e; 
     color: white;
@@ -65,19 +47,6 @@ button {
 }
 button:hover { background-color: #2a9232;  transform: translateY(-1px);}
 form:after {content: "";grid-column: 2; grid-row: 5 / 8;  border-left: 1px solid #e0e0e0; height: 160px; }
-
-.error-container {
-    background-color: #ffecec;
-    border-left: 4px solid #ff4d4d;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-}
-
-.error-msg {
-    color: #d8000c;
-    font-size: 13px;
-    font-weight: 600;
-    margin: 5px 0 !important; 
-    text-align: left;
-}
+.container {background-color: #ffecec;border-left: 4px solid #ff4d4d;padding: 10px;margin-bottom: 15px;border-radius: 4px;}
+.msg {color: #d8000c;font-size: 13px;font-weight: 600;margin: 5px 0 !important; text-align: left;}
+a{grid-column: 1/-1;margin-top: 20px;color: #0e5212;text-decoration: none;font-weight: 600;font-size: 16px;  }
