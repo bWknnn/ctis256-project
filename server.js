@@ -431,7 +431,6 @@ app.get("/delete/:id", async(req,res)=> {
   res.redirect("/marketpage" )
 })
 
-<<<<<<< HEAD
 app.get("/edit-product/:id",
    async(req,res)=> {
   if (!req.session.isAuthenticated || !req.session.user) {
@@ -503,7 +502,7 @@ app.post("/edit-product/:id", upload.single("photo"),
       res.status(500).send("error editing product");
     }
 });
-=======
+
 app.get("/edit-user", (req, res) => {
   // if (!req.session.isAuthenticated || !req.session.user) {
   //     req.session.msg = "Please login first";
@@ -604,7 +603,6 @@ app.post("/cart/update", async (req, res) => {
 });
 
 
->>>>>>> userpage
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
