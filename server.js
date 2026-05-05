@@ -246,17 +246,73 @@ app.get("/marketpage", async (req,res)=>{
 
 app.get("/userpage", async (req, res) => {
   if (!req.session.isAuthenticated) {
-        req.session.msg = "Please login to access the mainpage";
-        return res.redirect("/");
-    }
-  if (req.session.loginType == "consumer") {
-    const [rows] = await db.query("select * from products")
-    res.render("userpage", {products: rows, success: req.session.success})
-  } else {
-    req.session.msg = "This page is only accessible to consumer users"
-    res.redirect("/")
+    req.session.msg = "Please login to access the mainpage";
+    return res.redirect("/");
   }
-})
+
+  if (req.session.loginType !== "consumer") {
+    req.session.msg = "This page is only accessible to consumer users";
+    return res.redirect("/");
+  }
+  // console.log("User city: ", req.session.user.city)
+  // console.log("User dictrict: ", req.session.user.district)
+  // console.log("Current Time in DB:", new Date().toISOString());
+  
+  const { search } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = 4;
+  const offset = (page - 1) * limit;
+
+  const userCity = req.session.user.city;
+  const userDistrict = req.session.user.district;
+
+  let countQuery = `
+    SELECT COUNT(*) as total 
+    FROM products p 
+    JOIN market m ON p.email = m.email 
+    WHERE m.city = ? AND p.expire_date > NOW()`;
+  let countParams = [userCity];
+
+  if (search) {
+    countQuery += " AND p.title LIKE ?";
+    countParams.push(`%${search}%`);
+  }
+  const [countResult] = await db.query(countQuery, countParams);
+  const totalPages = Math.ceil(countResult[0].total / limit) || 1;
+
+  let query = `
+    SELECT p.*
+    FROM products p
+    JOIN market m ON p.email = m.email
+    WHERE m.city = ?
+    AND p.expire_date > NOW()
+  `;
+  let params = [userCity];
+
+  if (search) {
+    query += " AND p.title LIKE ?";
+    params.push(`%${search}%`);
+  }
+
+  query += " ORDER BY (m.district = ?) DESC"; 
+  params.push(userDistrict)
+  query += " LIMIT ? OFFSET ?";
+  params.push( limit, offset);
+
+  const [rows] = await db.query(query, params);
+
+  res.render("userpage", {
+    products: rows,
+    success: req.session.success,
+    currentPage: page,
+    totalPages: totalPages,
+    search: search || "" 
+  });
+  
+  req.session.success = null; 
+});
+
+
 
 app.get("/addOne", async(req,res) => {
   try{
@@ -567,9 +623,11 @@ app.get("/cart", async (req, res) => {
   });
 
   const finalCart = Object.values(groupedCart);
+  const totalPrice = finalCart.reduce((sum, item) => {
+    return sum + (item.discount_price * item.quantity);
+  }, 0);
 
-
-  res.render("cart", {cart: finalCart})
+  res.render("cart", {cart: finalCart, total: totalPrice.toFixed(2)})
 })
 
 app.post("/cart/update", async (req, res) => {
@@ -602,6 +660,36 @@ app.post("/cart/update", async (req, res) => {
   res.json({ quantity: rows[0].quantity });
 });
 
+app.post("/cart/purchase", async (req, res) => {
+    const email = req.session.user?.email;
+    if (!email) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+        const [cartItems] = await db.query(
+            "SELECT product_id, COUNT(*) as qty FROM cart WHERE email = ? GROUP BY product_id",
+            [email]
+        );
+
+        if (cartItems.length === 0) {
+            return res.status(400).json({ error: "Cart is empty" });
+        }
+
+        for (const item of cartItems) {
+            await db.query(
+                "UPDATE products SET stock = stock - ? WHERE id = ?",
+                [item.qty, item.product_id]
+            );
+        }
+
+        await db.query("DELETE FROM cart WHERE email = ?", [email]);
+
+        res.json({ success: true, message: "Purchase completed and cart cleared" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Purchase failed" });
+    }
+});
 
 
 app.listen(process.env.PORT, () => {

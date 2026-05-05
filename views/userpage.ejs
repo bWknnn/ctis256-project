@@ -11,8 +11,8 @@
             <img src="/img/profile.png" id="icon">
         </a>
 
-        <form action="/search" method="GET" class="search-box">
-            <input type="text" name="q" placeholder="Search products...">
+        <form class="search-box" action="/userpage" method="GET">
+            <input type="text" name="search" placeholder="Search products...">
             <button type="submit">Search</button>
         </form>
         
@@ -31,7 +31,7 @@
                 <img src="/products/<%= product.img %>" class="product-image">
 
                 <h3><%= product.title %></h3>
-                <p id="discount">Price: <span>$<%= product.normal_price %></span> $<%= product.discount_price %></p>
+                <p id="discount">Price: <span><%= product.normal_price %></span> <%= product.discount_price %> TL</p>
                 <p>Stock: <%= product.stock %></p>
                 <p>Expires: <%= new Date(product.expire_date).toLocaleDateString('en-GB') %></p>
 
@@ -47,6 +47,21 @@
     <% } else { %>
         <p>No products found</p>
     <% } %>
+    </div>
+    <div class="pagination">
+        <% if (currentPage > 1) { %>
+            <a href="/userpage?page=<%= currentPage - 1 %><% if (typeof search !== 'undefined') { %>&search=<%= search %><% } %>">
+                Previous
+            </a>
+        <% } %>
+
+        <span>Page <%= currentPage %> of <%= totalPages %></span>
+
+        <% if (currentPage < totalPages) { %>
+            <a href="/userpage?page=<%= currentPage + 1 %><% if (typeof search !== 'undefined') { %>&search=<%= search %><% } %>">
+                Next
+            </a>
+        <% } %>
     </div>
 
 </body>

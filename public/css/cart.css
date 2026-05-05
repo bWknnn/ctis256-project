@@ -85,3 +85,57 @@ body{
     font-size:20px;
     margin-top:50px;
 }
+
+.cart-footer {
+    text-align: left;
+    padding: 20px 0;
+    border-top: 2px solid #ddd;
+}
+
+.total-text {
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.purchase-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.purchase-btn:hover {
+    background: #218838;
+    filter: brightness(1.1);
+}
+
+.status-msg {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.status-msg.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-msg.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.purchase-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}

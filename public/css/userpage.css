@@ -118,7 +118,7 @@ h2 {
     border-radius: 8px;
     font-weight: bold;
 
-    animation: fadeOut 1s forwards;
+    animation: fadeOut 2s forwards;
 }
 
 @keyframes fadeOut {
