@@ -325,10 +325,10 @@ app.get("/consumerpage", async (req, res) => {
     const userCity = req.session.user.city;
     const userDistrict = req.session.user.district;
 
-    let countQuery = ` SELECT COUNT(*) as total FROM products p JOIN market m ON p.email = m.email WHERE m.city = ? AND p.expire_date >= CURDATE()`
+    let countQuery = ` SELECT COUNT(*) as total FROM products p JOIN market m ON p.email = m.email WHERE m.city = ? AND p.expire_date >= CURDATE() AND p.stock > 0`
     let countParams = [userCity]
 
-    let productQuery = ` SELECT p.* FROM products p JOIN market m ON p.email = m.email WHERE m.city = ? AND p.expire_date >= CURDATE()`
+    let productQuery = ` SELECT p.* FROM products p JOIN market m ON p.email = m.email WHERE m.city = ? AND p.expire_date >= CURDATE()  AND p.stock > 0`
     let productParams = [userCity];
 
     if(search && search.trim() !== ""){
@@ -652,42 +652,59 @@ app.post("/edit-user", async (req, res) => {
 })
 
 app.post("/cart/add/:productid", async (req, res) => {
-  const prod_id = req.params.productid
-  const email = req.session.user.email
-  await db.query("insert into cart (email, product_id) values (?, ?)", [email, prod_id])
-  req.session.success = "Product added successfully"
-  res.redirect("/consumerpage")
-})
+  if (!req.session.user || req.session.loginType !== "consumer") {
+    req.session.msg = { type: "error", text: "Please enter with an consumer account" };
+    return res.redirect("/"); 
+  }
+
+  const prod_id = req.params.productid;
+  const email = req.session.user.email;
+  
+  try {
+    const [[product]] = await db.query("SELECT stock FROM products WHERE id=?", [prod_id]);
+
+    const [[cartStatus]] = await db.query(
+      "SELECT COUNT(*) as count FROM cart WHERE email = ? AND id = ?", 
+      [email, prod_id]
+    );
+
+    const currentQtyInCart = cartStatus.count;
+
+    if (product && currentQtyInCart < product.stock) {
+      await db.query("INSERT INTO cart (email, id) VALUES (?, ?)", [email, prod_id]);
+      req.session.success = "Added to cart";
+    } else {
+      req.session.success = "Out of stock!"; 
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  res.redirect("/consumerpage");
+});
 
 app.get("/cart", async (req, res) => {
   const email = req.session.user?.email;
 
   const [rows] = await db.query(
-    `SELECT p.* FROM cart c
-    JOIN products p ON c.product_id = p.id
+    `SELECT p.*, c.product_id AS cart_row_id FROM cart c
+    JOIN products p ON c.id = p.id
     WHERE c.email = ?`, [email]
   );
 
   const groupedCart = {};
-
   rows.forEach(item => {
     if (groupedCart[item.id]) {
       groupedCart[item.id].quantity += 1;
     } else {
-      groupedCart[item.id] = {
-        ...item,
-        quantity: 1
-      };
+      groupedCart[item.id] = { ...item, quantity: 1 };
     }
   });
 
   const finalCart = Object.values(groupedCart);
-  const totalPrice = finalCart.reduce((sum, item) => {
-    return sum + (item.discount_price * item.quantity);
-  }, 0);
+  const totalPrice = finalCart.reduce((sum, item) => sum + (item.discount_price * item.quantity), 0);
 
-  res.render("cart", { cart: finalCart, total: totalPrice.toFixed(2) })
-})
+  res.render("cart", { cart: finalCart, total: totalPrice.toFixed(2) });
+});
 
 app.post("/cart/update", async (req, res) => {
   const email = req.session.user?.email;
@@ -695,28 +712,40 @@ app.post("/cart/update", async (req, res) => {
 
   if (!email) return res.status(401).json({ error: "Not logged in" });
 
-  if (change === 1) {
-    await db.query(
-      "INSERT INTO cart (email, product_id) VALUES (?, ?)",
-      [email, productId]
-    );
-  } else {
-    await db.query(
-      `DELETE FROM cart 
-       WHERE email = ? AND product_id = ? 
-       LIMIT 1`,
-      [email, productId]
-    );
-  }
-
-  const [rows] = await db.query(
-    `SELECT COUNT(*) as quantity 
-     FROM cart 
-     WHERE email = ? AND product_id = ?`,
+  const [[product]] = await db.query("SELECT stock FROM products WHERE id = ?", [productId]);
+  const [[cartStatus]] = await db.query(
+    "SELECT COUNT(*) as count FROM cart WHERE email = ? AND id = ?", 
     [email, productId]
   );
 
-  res.json({ quantity: rows[0].quantity });
+  const currentQty = cartStatus.count;
+
+  if (change === 1) {
+    if (currentQty >= product.stock) {
+      return res.status(400).json({ error: "Out of stock", maxReached: true, quantity: currentQty });
+    }
+    await db.query("INSERT INTO cart (email, id) VALUES (?, ?)", [email, productId]);
+  } else {
+    await db.query("DELETE FROM cart WHERE email = ? AND id = ? LIMIT 1", [email, productId]);
+  }
+
+  const [cartItems] = await db.query(
+    `SELECT p.id, p.discount_price, COUNT(c.product_id) as qty
+     FROM products p
+     JOIN cart c ON p.id = c.id
+     WHERE c.email = ?
+     GROUP BY p.id`, [email]
+  );
+
+  const grandTotal = cartItems.reduce((sum, item) => sum + (item.discount_price * item.qty), 0);
+  const updatedItem = cartItems.find(item => item.id == productId) || { qty: 0, discount_price: 0 };
+
+  res.json({ 
+    quantity: updatedItem.qty,
+    itemSubtotal: (updatedItem.qty * updatedItem.discount_price).toFixed(2),
+    grandTotal: grandTotal.toFixed(2),
+    maxReached: updatedItem.qty >= product.stock
+  });
 });
 
 app.post("/cart/purchase", async (req, res) => {
@@ -725,31 +754,31 @@ app.post("/cart/purchase", async (req, res) => {
 
   try {
     const [cartItems] = await db.query(
-      "SELECT product_id, COUNT(*) as qty FROM cart WHERE email = ? GROUP BY product_id",
+      "SELECT id, COUNT(*) as qty FROM cart WHERE email = ? GROUP BY id",
       [email]
     );
 
-    if (cartItems.length === 0) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
+    if (cartItems.length === 0) return res.status(400).json({ error: "Cart is empty" });
 
     for (const item of cartItems) {
-      await db.query(
-        "UPDATE products SET stock = stock - ? WHERE id = ?",
-        [item.qty, item.product_id]
-      );
+      await db.query("UPDATE products SET stock = stock - ? WHERE id = ?", [item.qty, item.id]);
     }
 
     await db.query("DELETE FROM cart WHERE email = ?", [email]);
-
-    res.json({ success: true, message: "Purchase completed and cart cleared" });
-
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Purchase failed" });
   }
 });
 
+app.get("/cart/delete/:id", async(req,res)=>{
+  try {
+    await db.query("DELETE FROM cart WHERE id = ?", [req.params.id]);
+    res.redirect("/cart");
+  } catch (error) {
+    console.log(error.message);
+  }
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
