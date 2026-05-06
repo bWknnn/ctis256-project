@@ -9,61 +9,53 @@
 
     <div class="nav">
         <h2>Your Cart</h2>
-
-        <a href="/consumerpage" class="back">
-            ← Back
-        </a>
+        <a href="/consumerpage" class="back">← Back</a>
     </div>
 
     <div id="msg" class="msg" style="display: none;"></div>
 
     <div class="cart">
-
         <% if (cart && cart.length) { %>
-
             <% cart.forEach(item => { %>
-
-                <div class="card" id="item-<%= item.id %>">
-
+                <div class="card" id="item<%= item.id %>">
                     <img src="/products/<%= item.img %>" class="img">
 
                     <div class="info">
                         <h3><%= item.title %></h3>
-
                         <p class="price">
-                            <span><%= item.normal_price %></span>
+                            <span><%= item.normal_price %> TL</span>
                             <%= item.discount_price %> TL
                         </p>
-
                         <p>Stock: <%= item.stock %></p>
-
-                        <p>
-                            Expires:
-                            <%= new Date(item.expire_date).toLocaleDateString('en-GB') %>
-                        </p>
+                        <p>Expires: <%= new Date(item.expire_date).toLocaleDateString('tr-TR') %></p>
                     </div>
 
-                    <div class="qty-box">
-                        <button class="qty" onclick="updateQuantity(`<%= item.id %>`, -1)">−</button>
-                        <span id="qty-<%= item.id %>"><%= item.quantity %></span>
-                        <button class="qty" onclick="updateQuantity(`<%= item.id %>`, 1)">+</button>
+                    <div class="qty">
+                        <button class="qty-btn" onclick="updateQuantity('<%= item.id %>', -1)">-</button>
+                        <span id="qty<%= item.id %>"><%= item.quantity %></span>
+                        <button class="qty-btn" onclick="updateQuantity('<%= item.id %>', 1)">+</button>
                     </div>
 
+                    <div class="subtotal-box">
+                        <p>Subtotal:</p>
+                        <span id="subtotal<%= item.id %>" class="subtotal-val">
+                            <%= (item.discount_price * item.quantity).toFixed(2) %> TL
+                        </span>
+                    </div>
+
+                    <a href='/cart/delete/<%= item.id %>'>
+                        <img class="delete" src="/img/delete.png" alt="Delete">
+                    </a>
                 </div>
-
             <% }) %>
 
             <div class="footer">
-                <h2 class="total">Total: <%= total %> TL</h2>
+                <h3 class="total">Total: <span id="cart-total">$<%= total %></span></h3>
                 <button class="purchase" onclick="processPurchase()">Purchase Now</button>
             </div>
-
         <% } else { %>
-
             <p class="empty">Your cart is empty</p>
-
         <% } %>
-
     </div>
 
     <script src="/script/cart.js"></script>

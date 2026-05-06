@@ -59,18 +59,20 @@ CREATE TABLE IF NOT EXISTS `market` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `cart` (
-  `id` INT AUTO_INCREMENT,
+  `product_id` INT AUTO_INCREMENT, 
+  
   `email` VARCHAR(100) NOT NULL,
-  `product_id` INT NOT NULL,
+  
+  `id` INT NOT NULL, 
 
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`product_id`),
 
   FOREIGN KEY (`email`) REFERENCES `consumer`(`email`)
     ON DELETE CASCADE,
 
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`)
+  FOREIGN KEY (`id`) REFERENCES `products`(`id`)
     ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=utf8mb4;
 --
 -- Dumping data for table `products and market`
 --
