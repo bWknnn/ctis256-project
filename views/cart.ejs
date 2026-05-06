@@ -7,27 +7,27 @@
 </head>
 <body>
 
-    <div class="navbar">
+    <div class="nav">
         <h2>Your Cart</h2>
 
-        <a href="/userpage" class="back-btn">
+        <a href="/consumerpage" class="back">
             ← Back
         </a>
     </div>
 
-    <div id="status-msg" class="status-msg" style="display: none;"></div>
+    <div id="msg" class="msg" style="display: none;"></div>
 
-    <div class="cart-container">
+    <div class="cart">
 
-        <% if(cart && cart.length){ %>
+        <% if (cart && cart.length) { %>
 
             <% cart.forEach(item => { %>
 
-                <div class="cart-card" id="item-<%= item.id %>">
+                <div class="card" id="item-<%= item.id %>">
 
-                    <img src="/products/<%= item.img %>" class="cart-image">
+                    <img src="/products/<%= item.img %>" class="img">
 
-                    <div class="cart-info">
+                    <div class="info">
                         <h3><%= item.title %></h3>
 
                         <p class="price">
@@ -43,28 +43,29 @@
                         </p>
                     </div>
 
-                    <div class="quantity-controls">
-                        <button class="qty-btn" onclick="updateQuantity(`<%= item.id %>`, -1)">−</button>
+                    <div class="qty-box">
+                        <button class="qty" onclick="updateQuantity(`<%= item.id %>`, -1)">−</button>
                         <span id="qty-<%= item.id %>"><%= item.quantity %></span>
-                        <button class="qty-btn" onclick="updateQuantity(`<%= item.id %>`, 1)">+</button>
+                        <button class="qty" onclick="updateQuantity(`<%= item.id %>`, 1)">+</button>
                     </div>
 
                 </div>
 
             <% }) %>
-            <!-- Inside your cart && cart.length check, after the loop -->
-            <div class="cart-footer">
-                <h2 class="total-text">Total: <%= total %> TL</h2>
-                <button class="purchase-btn" onclick="processPurchase()">Purchase Now</button>
+
+            <div class="footer">
+                <h2 class="total">Total: <%= total %> TL</h2>
+                <button class="purchase" onclick="processPurchase()">Purchase Now</button>
             </div>
 
         <% } else { %>
 
-            <p class="empty-cart">Your cart is empty</p>
+            <p class="empty">Your cart is empty</p>
 
         <% } %>
 
     </div>
+
     <script src="/script/cart.js"></script>
 </body>
 </html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <link rel="stylesheet" href="/css/consumerpage.css">
+</head>
+<body>
+    <div class="nav">        
+        <div class="buttons">
+            <a href="/edit-user"><img src="/img/profile.png" id="icon"></a>
+            <a href="/logout"><img src="/img/logout.png" id="icon"></a>
+        </div>
+
+        <form class="search" action="/consumerpage" method="GET">
+            <input type="text" name="search" placeholder="Search products..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+            <button type="submit">Search</button>
+        </form>
+
+        <a href="/cart" class="btn">Cart 🛒</a>
+    </div>
+
+    <h2>Products</h2>
+
+    <% if (success) { %>
+        <p class="msg"><%= success %></p>
+    <% } %>
+
+    <div class="products">
+        <% if (products && products.length) { %>
+            <% products.forEach(product => { %>
+                <div class="card">
+                    <img src="/products/<%= product.img %>" class="img">
+
+                    <h3><%= product.title %></h3>
+
+                    <p class="price">
+                        Price:
+                        <span><%= product.normal_price %></span>
+                        <%= product.discount_price %> TL
+                    </p>
+
+                    <p>Stock: <%= product.stock %></p>
+                    <p>Expires: <%= new Date(product.expire_date).toLocaleDateString('en-GB') %></p>
+
+                    <form action="/cart/add/<%= product.id %>" method="POST">
+                        <button type="submit">Add to Cart</button>
+                    </form>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>No products found</p>
+        <% } %>
+    </div>
+    <div class="pagination">
+        <% if (currentPage > 1) { %>
+            <a href="/consumerpage?page=<%= currentPage - 1 %><% if (typeof search !== 'undefined' && search) { %>&search=<%= search %><% } %>">
+                Previous
+            </a>
+        <% } %>
+
+        <span>Page <%= currentPage %> of <%= totalPages %></span>
+
+        <% if (currentPage < totalPages) { %>
+            <a href="/consumerpage?page=<%= currentPage + 1 %><% if (typeof search !== 'undefined' && search) { %>&search=<%= search %><% } %>">
+                Next
+            </a>
+        <% } %>
+    </div>
+
+</body>
+</html>
