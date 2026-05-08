@@ -23,8 +23,8 @@
                     <div class="info">
                         <h3><%= item.title %></h3>
                         <p class="price">
-                            <span><%= item.normal_price %> TL</span>
-                            <%= item.discount_price %> TL
+                            <span><%= item.normal_price %> $</span>
+                            <%= item.discount_price %> $
                         </p>
                         <p>Stock: <%= item.stock %></p>
                         <p>Expires: <%= new Date(item.expire_date).toLocaleDateString('tr-TR') %></p>
@@ -39,7 +39,7 @@
                     <div class="subtotal-box">
                         <p>Subtotal:</p>
                         <span id="subtotal<%= item.id %>" class="subtotal-val">
-                            <%= (item.discount_price * item.quantity).toFixed(2) %> TL
+                            <%= (item.discount_price * item.quantity).toFixed(2) %> $
                         </span>
                     </div>
 
@@ -48,10 +48,13 @@
                     </a>
                 </div>
             <% }) %>
-
+            <p id="stock-out"> </p>
             <div class="footer">
                 <h3 class="total">Total: <span id="cart-total">$<%= total %></span></h3>
                 <button class="purchase" onclick="processPurchase()">Purchase Now</button>
+            </div>
+            <div id="cart-loading" style="display: none; text-align: center; margin-top: 30px;">
+                <img src="/img/loading.gif" alt="Loading..." style="width: 80px;">
             </div>
         <% } else { %>
             <p class="empty">Your cart is empty</p>

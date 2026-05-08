@@ -6,33 +6,43 @@ async function updateQuantity(productId, change) {
     });
 
     const data = await res.json();
-    
+    const cart = document.querySelector(".cart")   
     const stockMsg = document.getElementById("stock-out");
-    if (stockMsg) stockMsg.innerText = "";
+    stockMsg.innerText = "";
 
-    if (res.status === 400 && data.maxReached) {
-        if (stockMsg) stockMsg.innerText = "Sorry, you've reached the maximum stock available for this item.";
+    if (data.maxReached) {
+        stockMsg.innerText = "Sorry, you've reached the maximum stock available for this item.";
         return; 
     }
 
     const itemCard = document.getElementById("item" + productId);
 
     if (data.quantity <= 0) {
-        if (itemCard) {
-            itemCard.style.opacity = "0";
-            itemCard.style.transition = "0.5s";
-            
-            setTimeout(() => {
-                itemCard.remove();
-                
-                if (document.querySelectorAll('.card').length === 0) {
-                    setTimeout(() => {
-                        location.reload(); 
-                    }, 500);
-                }
-            }, 500);
+    if (itemCard) {
+        itemCard.style.transition = "0.4s";
+        itemCard.style.opacity = "0";
+        itemCard.style.transform = "translateX(-10px)";
+
+        setTimeout(() => {
+            itemCard.remove();
+
+            if (document.querySelectorAll(".card").length === 0) {
+                const footer = document.querySelector(".footer");
+                const stockMsg = document.getElementById("stock-out");
+                const loading = document.getElementById("cart-loading");
+                const cart = document.querySelector(".cart");
+
+                footer.style.display = "none";
+                stockMsg.style.display = "none";
+                loading.style.display = "block";
+
+                setTimeout(() => {
+                    cart.innerHTML = `<p class="empty">Your cart is empty</p>`;
+                }, 2000);
+            }
+            }, 400);
         }
-    } else {
+        } else {
         const qtyEl = document.getElementById("qty" + productId); 
         const subtotalEl = document.getElementById("subtotal" + productId); 
         

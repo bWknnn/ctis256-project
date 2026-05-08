@@ -266,22 +266,22 @@ app.get("/marketpage", async (req, res) => {
 })
 
 function buildFuzzySearchCondition(search, columnName) {
-  const words = search.trim().toLocaleLowerCase("tr-TR").split(" ")
+  const words = search.trim().toLocaleLowerCase("tr-TR").split(" ")//elma 
 
   const conditions = [];
   const params = [];
 
   for (let word of words) {
     conditions.push(`LOWER(${columnName}) LIKE ?`);
-    params.push(`%${word}%`);
+    params.push(`%${word}%`);// %elma%
 
     if (word.length >= 3) {
-      const pattern = "%" + word.split("").join("%") + "%";
+      const pattern = "%" + word.split("").join("%") + "%"; // %e%l%m%a%
       conditions.push(`LOWER(${columnName}) LIKE ?`);
       params.push(pattern);
 
       for (let i = 0; i < word.length; i++) {
-        const variant =
+        const variant = // %_lma% , %e_ma% , ...
           word.slice(0, i) +
           "_" +
           word.slice(i + 1);
@@ -369,7 +369,7 @@ app.get("/consumerpage", async (req, res) => {
 
 app.get("/addOne", async (req, res) => {
   try {
-    if (!req.session.isAuthenticated || !req.session.user) {
+    if (!req.session.isAuthenticated || req.session.loginType === "consumer") {
       req.session.msg = {
         type: "error",
         text: "Please sign in to add a product"
@@ -454,6 +454,7 @@ app.get("/edit", async (req, res) => {
     }
     return res.redirect("/");
   }
+  if(req.session.loginType === "consumer") return res.redirect("/edit-user")
   const success = req.session.success
   const errors = req.session.error || []
   req.session.activeTab ??= "info"
@@ -475,10 +476,9 @@ app.post("/edit", async (req, res) => {
   const form = req.body
   const user = req.session.user
   req.session.activeTab = "info";
-  if (form.email != user.email || form.market != user.market || form.city != user.city || form.district != user.district) {
+  if (form.market != user.market || form.city != user.city || form.district != user.district) {
     req.session.success = "Information has been changed successfully!"
-    await db.query("UPDATE market SET email = ?, market = ?, city = ?, district = ? WHERE email = ?", [form.email, form.market, form.city, form.district, user.email]);
-    req.session.user.email = form.email;
+    await db.query("UPDATE market SET market = ?, city = ?, district = ? WHERE email = ?", [ form.market, form.city, form.district, user.email]);
     req.session.user.market = form.market;
     req.session.user.city = form.city;
     req.session.user.district = form.district;
@@ -535,9 +535,24 @@ app.post("/edit-password",
   })
 
 app.get("/delete/:id", async (req, res) => {
-  await db.query("DELETE from products where id=?", [req.params.id])
-
-  res.redirect("/marketpage")
+  try{
+    if (!req.session.isAuthenticated) {
+      req.session.msg = {
+        type: "error",
+        text: "Please login to access the mainpage"
+      };
+      return res.redirect("/");
+    }
+    const [rows] = await db.query("SELECT email from products where id = ?",[req.params.id])
+    if(req.session.user.email === rows[0].email){
+      await db.query("DELETE from products where id=?", [req.params.id])
+      return res.redirect("/marketpage")
+    }else{
+      return res.redirect("/"); 
+    }
+  }catch(error){
+    console.log(error);
+  }
 })
 
 app.get("/edit-product/:id",
@@ -549,6 +564,7 @@ app.get("/edit-product/:id",
       }
       return res.redirect("/");
     }
+    if(req.session.loginType === "consumer") return res.redirect("/consumerpage")
     let [change] = await db.query("SELECT * from products where id=?", [req.params.id])
 
     change = change[0]
@@ -620,6 +636,7 @@ app.get("/edit-user", (req, res) => {
     } 
     return res.redirect("/");
   }
+  if(req.session.loginType === "market") return res.redirect("/")
   const success = req.session.success
   const errors = req.session.error || []
   req.session.activeTab ??= "info"
@@ -640,10 +657,9 @@ app.post("/edit-user", async (req, res) => {
   const form = req.body
   const user = req.session.user
   req.session.activeTab = "info";
-  if (form.email != user.email || form.name != user.name || form.city != user.city || form.district != user.district) {
+  if (form.name != user.name || form.city != user.city || form.district != user.district) {
     req.session.success = "Information has been changed successfully!"
-    await db.query("UPDATE consumer SET email = ?, name = ?, city = ?, district = ? WHERE email = ?", [form.email, form.name, form.city, form.district, user.email]);
-    req.session.user.email = form.email;
+    await db.query("UPDATE consumer SET  name = ?, city = ?, district = ? WHERE email = ?", [form.name, form.city, form.district, user.email]);
     req.session.user.name = form.name;
     req.session.user.city = form.city;
     req.session.user.district = form.district;
@@ -662,7 +678,7 @@ app.post("/cart/add/:productid", async (req, res) => {
   
   try {
     const [[product]] = await db.query("SELECT stock FROM products WHERE id=?", [prod_id]);
-
+    // no need for index just product.stock  
     const [[cartStatus]] = await db.query(
       "SELECT COUNT(*) as count FROM cart WHERE email = ? AND id = ?", 
       [email, prod_id]
@@ -744,7 +760,7 @@ app.post("/cart/update", async (req, res) => {
     quantity: updatedItem.qty,
     itemSubtotal: (updatedItem.qty * updatedItem.discount_price).toFixed(2),
     grandTotal: grandTotal.toFixed(2),
-    maxReached: updatedItem.qty >= product.stock
+    maxReached: updatedItem.qty > product.stock
   });
 });
 

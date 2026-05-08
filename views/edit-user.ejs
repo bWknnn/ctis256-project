@@ -11,19 +11,15 @@
         <h1>Profile Information</h1>
         <form action="/edit-user" method="post">
            <label>
-               <p>Email: </p><input type="text" name="email" value="<%=user?.email %>">
-           </label>
-            
-           <label>
-               <p>Name: </p><input type="text" name="name" value="<%=user.name %>">
+               <p>Name: </p><input type="text" name="name" value="<%=user.name %>" required>
            </label>
 
            <label>
-               <p>City: </p><input type="text" name="city" value="<%=user.city %>">
+               <p>City: </p><input type="text" name="city" value="<%=user.city %>" required>
            </label>
     
            <label>
-               <p>District: </p><input type="text" name="district" value="<%=user.district %>">   
+               <p>District: </p><input type="text" name="district" value="<%=user.district %>" required>   
            </label>
            <%if(success!=null){%>
                 <p><%=success%></p>

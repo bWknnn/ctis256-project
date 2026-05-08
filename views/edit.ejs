@@ -10,24 +10,21 @@
     <div class="edit <%= activeTab == 'password' ? 'visible' : '' %>">
         <h1>Profile Information</h1>
         <form action="/edit" method="post">
+           
            <label>
-               <p>Email: </p><input type="text" name="email" value="<%=user.email %>">
+            <p>Market Name: </p><input type="text" name="market" value="<%=user.market %>" required>
            </label>
             
            <label>
-            <p>Market Name: </p><input type="text" name="market" value="<%=user.market %>">
-           </label>
-            
-           <label>
-               <p>City: </p><input type="text" name="city" value="<%=user.city %>">
+               <p>City: </p><input type="text" name="city" value="<%=user.city %>" required>
            </label>
     
            <label>
-               <p>District: </p><input type="text" name="district" value="<%=user.district %>">   
+               <p>District: </p><input type="text" name="district" value="<%=user.district %>" required>   
            </label>
            <%if(success!=null){%>
                 <p><%=success%></p>
-            <%}%>
+            <%} %>
             <button type="submit">Edit</button>
         </form>
         <button class="change">Change Password</button>
