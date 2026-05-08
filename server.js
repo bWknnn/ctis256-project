@@ -242,25 +242,29 @@ app.post("/verify-email", async (req, res) => {
 })
 
 app.get("/marketpage", async (req, res) => {
-  if (!req.session.isAuthenticated) {
-    req.session.msg = {
-      type: "error",
-      text: "Please sign in to access the mainpage"
+  try{
+    if (!req.session.isAuthenticated) {
+      req.session.msg = {
+        type: "error",
+        text: "Please sign in to access the mainpage"
+      }
+      return res.redirect("/");
     }
-    return res.redirect("/");
-  }
-
-  let page = req.query.page ?? 1
-  page = parseInt(page)
-  let [pros] = await db.query("SELECT * from products where email = ?", [req.session.user.email])
-  let [shown] = await db.query("select * from products where email = ? limit ?,3", [req.session.user.email, (page - 1) * 3])
-
-  const pagenum = Math.ceil(pros.length / 3)
-
-  if (req.session.loginType == "market") {
-    res.render("marketpage", { user: req.session.user, pagenum, shown, page });
-  } else {
-    res.redirect("/")
+  
+    let page = req.query.page ?? 1
+    page = parseInt(page)
+    let [pros] = await db.query("SELECT * from products where email = ?", [req.session.user.email])
+    let [shown] = await db.query("select * from products where email = ? limit ?,3", [req.session.user.email, (page - 1) * 3])
+  
+    const pagenum = Math.ceil(pros.length / 3)
+  
+    if (req.session.loginType == "market") {
+      res.render("marketpage", { user: req.session.user, pagenum, shown, page });
+    } else {
+      res.redirect("/")
+    }
+  }catch(error){
+    console.log(error);
   }
 
 })
@@ -466,31 +470,7 @@ app.get("/edit", async (req, res) => {
 })
 
 app.post("/edit", async (req, res) => {
-  if (!req.session.isAuthenticated || !req.session.user) {
-    req.session.msg = {
-      type: "error",
-      text: "Please sign in first"
-    }
-    return res.redirect("/");
-  }
-  const form = req.body
-  const user = req.session.user
-  req.session.activeTab = "info";
-  if (form.market != user.market || form.city != user.city || form.district != user.district) {
-    req.session.success = "Information has been changed successfully!"
-    await db.query("UPDATE market SET market = ?, city = ?, district = ? WHERE email = ?", [ form.market, form.city, form.district, user.email]);
-    req.session.user.market = form.market;
-    req.session.user.city = form.city;
-    req.session.user.district = form.district;
-  }
-  res.redirect("/edit")
-})
-
-app.post("/edit-password",
-  body("current").trim().notEmpty().withMessage("Current password is required."),
-  body("new1").trim().notEmpty().withMessage("New password should not be empty."),
-  body("new2").trim().notEmpty().withMessage("Write the new password again."),
-  async (req, res) => {
+  try{
     if (!req.session.isAuthenticated || !req.session.user) {
       req.session.msg = {
         type: "error",
@@ -498,40 +478,71 @@ app.post("/edit-password",
       }
       return res.redirect("/");
     }
-    const errors = validationResult(req);
-    req.session.error = errors.array().map(e => e.msg)
-    req.session.activeTab = "password";
-
-    if (errors.isEmpty()) {
-      const { current, new1, new2 } = req.body
-      const user = req.session.user
-      if (new1 != new2) {
-        req.session.error.push("New passwords do not match!")
-        console.log(req.session.error)
-
-        return res.redirect("/edit")
-      }
-
-      const match = await bcrypt.compare(current, user.password)
-
-      if (!match) {
-        req.session.error.push("Wrong password!")
-        return res.redirect("/edit")
-      }
-
-      const hashedPassword = await bcrypt.hash(new1, 10)
-
-      const same = await bcrypt.compare(new1, user.password)
-
-      if (same) {
-        req.session.error.push("New password cannot be the same as the current password!")
-        return res.redirect("/edit")
-      }
-
-      await db.query("UPDATE market set password = ? where email = ?", [hashedPassword, user.email])
-      req.session.success = "Password has been changed successfully"
+    const form = req.body
+    const user = req.session.user
+    req.session.activeTab = "info";
+    if (form.market != user.market || form.city != user.city || form.district != user.district) {
+      req.session.success = "Information has been changed successfully!"
+      await db.query("UPDATE market SET market = ?, city = ?, district = ? WHERE email = ?", [ form.market, form.city, form.district, user.email]);
+      req.session.user.market = form.market;
+      req.session.user.city = form.city;
+      req.session.user.district = form.district;
     }
     res.redirect("/edit")
+  }catch(error){
+    console.log(error);
+  }
+})
+
+app.post("/edit-password",
+  body("current").trim().notEmpty().withMessage("Current password is required."),
+  body("new1").trim().notEmpty().withMessage("New password should not be empty."),
+  body("new2").trim().notEmpty().withMessage("Write the new password again."),
+  async (req, res) => {
+    try{
+      if (!req.session.isAuthenticated || !req.session.user) {
+        req.session.msg = {
+          type: "error",
+          text: "Please sign in first"
+        }
+        return res.redirect("/");
+      }
+      const errors = validationResult(req);
+      req.session.error = errors.array().map(e => e.msg)
+      req.session.activeTab = "password";
+  
+      if (errors.isEmpty()) {
+        const { current, new1, new2 } = req.body
+        const user = req.session.user
+        if (new1 != new2) {
+          req.session.error.push("New passwords do not match!")
+          console.log(req.session.error)
+  
+          return res.redirect("/edit")
+        }
+  
+        const match = await bcrypt.compare(current, user.password)
+  
+        if (!match) {
+          req.session.error.push("Wrong password!")
+          return res.redirect("/edit")
+        }
+  
+        const hashedPassword = await bcrypt.hash(new1, 10)
+  
+        const same = await bcrypt.compare(new1, user.password)
+  
+        if (same) {
+          req.session.error.push("New password cannot be the same as the current password!")
+          return res.redirect("/edit")
+        }
+  
+        await db.query("UPDATE market set password = ? where email = ?", [hashedPassword, user.email])
+        req.session.success = "Password has been changed successfully"
+      }
+      res.redirect("/edit")
+    }catch(error){console.log(error);
+    }
   })
 
 app.get("/delete/:id", async (req, res) => {
@@ -557,19 +568,23 @@ app.get("/delete/:id", async (req, res) => {
 
 app.get("/edit-product/:id",
   async (req, res) => {
-    if (!req.session.isAuthenticated || !req.session.user) {
-      req.session.msg = {
-        type: "error",
-        text: "Please sign in first"
+    try{
+      if (!req.session.isAuthenticated || !req.session.user) {
+        req.session.msg = {
+          type: "error",
+          text: "Please sign in first"
+        }
+        return res.redirect("/");
       }
-      return res.redirect("/");
+      if(req.session.loginType === "consumer") return res.redirect("/consumerpage")
+      let [change] = await db.query("SELECT * from products where id=?", [req.params.id])
+  
+      change = change[0]
+  
+      res.render("edit-product", { change, form: null, errorList: null })
+    }catch(error){      
+      console.log(error);
     }
-    if(req.session.loginType === "consumer") return res.redirect("/consumerpage")
-    let [change] = await db.query("SELECT * from products where id=?", [req.params.id])
-
-    change = change[0]
-
-    res.render("edit-product", { change, form: null, errorList: null })
   })
 
 app.post("/edit-product/:id", upload.single("photo"),
@@ -647,24 +662,29 @@ app.get("/edit-user", (req, res) => {
 })
 
 app.post("/edit-user", async (req, res) => {
-  if (!req.session.isAuthenticated || !req.session.user) {
-    req.session.msg = {
-      type: "error",
-      text: "Please login first"
-    } 
-    return res.redirect("/");
+  try{
+    if (!req.session.isAuthenticated || !req.session.user) {
+      req.session.msg = {
+        type: "error",
+        text: "Please login first"
+      } 
+      return res.redirect("/");
+    }
+    const form = req.body
+    const user = req.session.user
+    req.session.activeTab = "info";
+    if (form.name != user.name || form.city != user.city || form.district != user.district) {
+      req.session.success = "Information has been changed successfully!"
+      await db.query("UPDATE consumer SET  name = ?, city = ?, district = ? WHERE email = ?", [form.name, form.city, form.district, user.email]);
+      req.session.user.name = form.name;
+      req.session.user.city = form.city;
+      req.session.user.district = form.district;
+    }
+    res.redirect("/edit-user")
+  }catch(error){
+      console.log(error);
+
   }
-  const form = req.body
-  const user = req.session.user
-  req.session.activeTab = "info";
-  if (form.name != user.name || form.city != user.city || form.district != user.district) {
-    req.session.success = "Information has been changed successfully!"
-    await db.query("UPDATE consumer SET  name = ?, city = ?, district = ? WHERE email = ?", [form.name, form.city, form.district, user.email]);
-    req.session.user.name = form.name;
-    req.session.user.city = form.city;
-    req.session.user.district = form.district;
-  }
-  res.redirect("/edit-user")
 })
 
 app.post("/cart/add/:productid", async (req, res) => {
@@ -699,69 +719,79 @@ app.post("/cart/add/:productid", async (req, res) => {
 });
 
 app.get("/cart", async (req, res) => {
-  const email = req.session.user?.email;
+  try{
+    const email = req.session.user?.email;
+  
+    const [rows] = await db.query(
+      `SELECT p.*, c.product_id AS cart_row_id FROM cart c
+      JOIN products p ON c.id = p.id
+      WHERE c.email = ?`, [email]
+    );
+  
+    const groupedCart = {};
+    rows.forEach(item => {
+      if (groupedCart[item.id]) {
+        groupedCart[item.id].quantity += 1;
+      } else {
+        groupedCart[item.id] = { ...item, quantity: 1 };
+      }
+    });
+  
+    const finalCart = Object.values(groupedCart);
+    const totalPrice = finalCart.reduce((sum, item) => sum + (item.discount_price * item.quantity), 0);
+  
+    res.render("cart", { cart: finalCart, total: totalPrice.toFixed(2) });
+  }catch(error){
+      console.log(error);
 
-  const [rows] = await db.query(
-    `SELECT p.*, c.product_id AS cart_row_id FROM cart c
-    JOIN products p ON c.id = p.id
-    WHERE c.email = ?`, [email]
-  );
-
-  const groupedCart = {};
-  rows.forEach(item => {
-    if (groupedCart[item.id]) {
-      groupedCart[item.id].quantity += 1;
-    } else {
-      groupedCart[item.id] = { ...item, quantity: 1 };
-    }
-  });
-
-  const finalCart = Object.values(groupedCart);
-  const totalPrice = finalCart.reduce((sum, item) => sum + (item.discount_price * item.quantity), 0);
-
-  res.render("cart", { cart: finalCart, total: totalPrice.toFixed(2) });
+  }
 });
 
 app.post("/cart/update", async (req, res) => {
-  const email = req.session.user?.email;
-  const { productId, change } = req.body;
-
-  if (!email) return res.status(401).json({ error: "Not logged in" });
-
-  const [[product]] = await db.query("SELECT stock FROM products WHERE id = ?", [productId]);
-  const [[cartStatus]] = await db.query(
-    "SELECT COUNT(*) as count FROM cart WHERE email = ? AND id = ?", 
-    [email, productId]
-  );
-
-  const currentQty = cartStatus.count;
-
-  if (change === 1) {
-    if (currentQty >= product.stock) {
-      return res.status(400).json({ error: "Out of stock", maxReached: true, quantity: currentQty });
+  try{
+    const email = req.session.user?.email;
+    const { productId, change } = req.body;
+  
+    if (!email) return res.status(401).json({ error: "Not logged in" });
+  
+    const [[product]] = await db.query("SELECT stock FROM products WHERE id = ?", [productId]);
+    const [[cartStatus]] = await db.query(
+      "SELECT COUNT(*) as count FROM cart WHERE email = ? AND id = ?", 
+      [email, productId]
+    );
+  
+    const currentQty = cartStatus.count;
+  
+    if (change === 1) {
+      if (currentQty >= product.stock) {
+        return res.status(400).json({ error: "Out of stock", maxReached: true, quantity: currentQty });
+      }
+      await db.query("INSERT INTO cart (email, id) VALUES (?, ?)", [email, productId]);
+    } else {
+      await db.query("DELETE FROM cart WHERE email = ? AND id = ? LIMIT 1", [email, productId]);
     }
-    await db.query("INSERT INTO cart (email, id) VALUES (?, ?)", [email, productId]);
-  } else {
-    await db.query("DELETE FROM cart WHERE email = ? AND id = ? LIMIT 1", [email, productId]);
+  
+    const [cartItems] = await db.query(
+      `SELECT p.id, p.discount_price, COUNT(c.product_id) as qty
+       FROM products p
+       JOIN cart c ON p.id = c.id
+       WHERE c.email = ?
+       GROUP BY p.id`, [email]
+    );
+  
+    const grandTotal = cartItems.reduce((sum, item) => sum + (item.discount_price * item.qty), 0);
+    const updatedItem = cartItems.find(item => item.id == productId) || { qty: 0, discount_price: 0 };
+  
+    res.json({ 
+      quantity: updatedItem.qty,
+      itemSubtotal: (updatedItem.qty * updatedItem.discount_price).toFixed(2),
+      grandTotal: grandTotal.toFixed(2),
+      maxReached: updatedItem.qty > product.stock
+    });
+  }catch(error){
+      console.log(error);
+
   }
-
-  const [cartItems] = await db.query(
-    `SELECT p.id, p.discount_price, COUNT(c.product_id) as qty
-     FROM products p
-     JOIN cart c ON p.id = c.id
-     WHERE c.email = ?
-     GROUP BY p.id`, [email]
-  );
-
-  const grandTotal = cartItems.reduce((sum, item) => sum + (item.discount_price * item.qty), 0);
-  const updatedItem = cartItems.find(item => item.id == productId) || { qty: 0, discount_price: 0 };
-
-  res.json({ 
-    quantity: updatedItem.qty,
-    itemSubtotal: (updatedItem.qty * updatedItem.discount_price).toFixed(2),
-    grandTotal: grandTotal.toFixed(2),
-    maxReached: updatedItem.qty > product.stock
-  });
 });
 
 app.post("/cart/purchase", async (req, res) => {
