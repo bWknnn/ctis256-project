@@ -47,14 +47,14 @@ async function updateQuantity(productId, change) {
         const subtotalEl = document.getElementById("subtotal" + productId); 
         
         if (qtyEl) qtyEl.innerText = data.quantity;
-        if (subtotalEl) subtotalEl.innerText = data.itemSubtotal + " TL";
+        if (subtotalEl) subtotalEl.innerText = data.itemSubtotal + " $";
         
         const plusBtn = document.querySelector("#item" + productId + " .qty-btn:last-of-type");
         if (plusBtn) plusBtn.disabled = data.maxReached;
     }
 
     const totalEl = document.getElementById("cart-total");
-    if (totalEl) totalEl.innerText = data.grandTotal + " TL";
+    if (totalEl) totalEl.innerText = data.grandTotal + " $";
 }
 
 async function processPurchase() {

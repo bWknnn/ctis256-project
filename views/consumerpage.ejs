@@ -42,6 +42,7 @@
 
                     <p>Stock: <%= product.stock %></p>
                     <p>Expires: <%= new Date(product.expire_date).toLocaleDateString('en-GB') %></p>
+                    <p>District: <%= product.district %></p>
 
                     <form action="/cart/add/<%= product.id %>" method="POST">
                         <button type="submit">Add to Cart</button>
